@@ -1,0 +1,60 @@
+#pragma once
+#include "Pedals/DriveBase.h"
+#include "Pedals/RamhornFuzz.h"
+#include "Pedals/Buzzsaw.h"
+#include "Pedals/RailBender.h"
+#include "Pedals/ValveHowler.h"
+#include "Pedals/FeralHound.h"
+
+class PedalboardProcessor : public juce::AudioProcessor, public juce::ChangeBroadcaster
+{
+public:
+    PedalboardProcessor();
+    const juce::String getName() const override { return "Virtual Pedalboard"; }
+    void prepareToPlay(double sr, int bs) override;
+    void releaseResources() override {}
+    using juce::AudioProcessor::processBlock;
+    void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+    juce::AudioProcessorEditor* createEditor() override;
+    bool hasEditor() const override { return true; }
+    bool acceptsMidi() const override { return false; }
+    bool producesMidi() const override { return false; }
+    double getTailLengthSeconds() const override { return 0.0; }
+    int getNumPrograms() override { return 1; }
+    int getCurrentProgram() override { return 0; }
+    void setCurrentProgram(int) override {}
+    const juce::String getProgramName(int) override { return {}; }
+    void changeProgramName(int, const juce::String&) override {}
+    void getStateInformation(juce::MemoryBlock&) override;
+    void setStateInformation(const void*, int) override;
+
+    // ---- Board (the horizontal row of slots) ----
+    juce::StringArray getBoard() const;                 // pedal ids, left to right
+    void setBoard(const juce::StringArray& ids);        // reorder / add / remove in one go
+    PedalBase* findPedal(const juce::String& id) const;
+    std::vector<std::unique_ptr<PedalBase>> pedals;     // every available pedal type
+
+    juce::AudioProcessorValueTreeState apvts;
+
+    // ---- Board input / output level (parameters "board_in" / "board_out", in dB) ----
+    // Peak meters for the UI: the audio thread raises them, the editor reads and decays them.
+    std::atomic<float> inPeak { 0.0f }, outPeak { 0.0f };
+    static float takePeak(std::atomic<float>& p) { return p.exchange(0.0f); }
+
+private:
+    std::atomic<float> *inGainDb = nullptr, *outGainDb = nullptr;
+    juce::SmoothedValue<float, juce::ValueSmoothingTypes::Multiplicative> inGain { 1.0f }, outGain { 1.0f };
+    static void raisePeak(std::atomic<float>& p, float v)
+    {
+        float cur = p.load();
+        while (v > cur && ! p.compare_exchange_weak(cur, v)) {}
+    }
+    static juce::AudioProcessorValueTreeState::ParameterLayout makeLayout(
+        std::vector<std::unique_ptr<PedalBase>>&);
+    static constexpr int maxSlots = 16;
+    mutable juce::SpinLock boardLock;
+    juce::StringArray board { "bm" };             // default board
+    PedalBase* chain[maxSlots] {};                      // audio-thread view of the board
+    int chainSize = 0;
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PedalboardProcessor)
+};

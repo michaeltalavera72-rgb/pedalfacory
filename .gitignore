@@ -1,0 +1,26 @@
+# Build output / IDE
+build/
+out/
+.vs/
+.vscode/
+*.user
+CMakeSettings.json
+CMakeUserPresets.json
+
+# Scratch / staging
+_to_delete/
+Claude outputs/
+
+# Third-party schematics (large, not ours to redistribute; one zip exceeds GitHub's 100 MB limit)
+schematics/
+
+# Blender backups and render frame dumps
+*.blend1
+Tools/Blender/_frames*/
+__pycache__/
+*.pyc
+
+# OS junk
+Thumbs.db
+desktop.ini
+.DS_Store

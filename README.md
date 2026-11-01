@@ -1,0 +1,78 @@
+# Virtual Pedalboard (JUCE 8, VST3 + Standalone)
+
+## Build on Windows (Visual Studio 2026)
+Needs CMake 4.2 or newer (the VS 2026 generator was added in 4.2). VS 2026 ships one;
+use the "Developer PowerShell for VS" so it is on the PATH. Check with: cmake --version
+
+    cmake -B build -G "Visual Studio 18 2026" -A x64
+    cmake --build build --config Release
+
+The first configure downloads JUCE 8.0.15 from GitHub (needs internet, takes a minute).
+
+Or open the solution in the build folder (VirtualPedalboard.sln or .slnx) in Visual Studio, set "VirtualPedalboard_Standalone"
+as the startup project, and press F5.
+
+Outputs: build\VirtualPedalboard_artefacts\Release\
+  - Standalone\Virtual Pedalboard.exe
+  - VST3\Virtual Pedalboard.vst3   -> copy this folder to C:\Program Files\Common Files\VST3
+                                      so your DAW finds it (or set COPY_PLUGIN_AFTER_BUILD TRUE
+                                      in CMakeLists.txt and run VS as administrator)
+
+Visual Studio 2022 also works: use -G "Visual Studio 17 2022".
+
+## Audio driver (Standalone)
+ASIO is enabled (JUCE_ASIO=1). In the Standalone: Options > Audio/MIDI Settings >
+Audio device type: ASIO, then pick your interface's driver. Untick "Mute audio input".
+ASIO only lists drivers that are installed (your interface's own driver, or ASIO4ALL /
+FlexASIO if you have no interface driver). The VST3 uses whatever driver your DAW uses.
+Licensing: the bundled ASIO SDK is GPLv3 (or Steinberg's own license). Fine for personal
+use; to sell or give away a closed-source build, sign Steinberg's free ASIO license.
+
+## Using it
+Drag a pedal by its title bar to reorder; X removes; "+ Add pedal" adds.
+
+## Adding a pedal
+Subclass DriveBase (or PedalBase) and register it in PedalboardProcessor::makeLayout.
+A second footswitch (e.g. boost): override secondarySwitchId()/secondarySwitchLabel(), bind
+secondaryParam, and handle primaryOn()/secondaryOn() in process(); the face gets two switches + LEDs.
+Optional artwork: write a PedalFace (see Source/Faces/PedalFaces.cpp) and return it from
+createFaceFor() for the pedal's id. Without a face the pedal gets the plain generic strip.
+
+## Pedals
+- Ramhorn Fuzz (id "bm"): our model of the Ram's Head-era Big Muff Pi circuit,
+  with an original face design. Volume / Tone / Sustain, footswitch = bypass.
+- Buzzsaw (id "hm"): our model of the 1983 Boss HM-2 "Heavy Metal" circuit, from the service-notes
+  schematic. Level / Low / High / Dist, footswitch = bypass. Original blood-red face design.
+  COLOR MIX EQ fitted to a nodal analysis of the real network (Tools/Analysis/hm2_colormix.py).
+- Rail Bender (id "rb"): our model of the T-Rex Hobo Drive (schematic V1.2.3). Drive / Tone / Level /
+  Boost knobs and TWO footswitches: left = Drive on/off, right = Boost on/off (0..+15 dB clean boost
+  before the drive; works with the drive off). Germanium-diode overdrive. Original rusty-orange face.
+- Valve Howler (id "ts"): our model of the Ibanez TS-808 Tube Screamer. Drive / Tone / Level,
+  footswitch = bypass. 1N914 diodes in the op-amp feedback (solved per sample), mid-hump bass cut,
+  exact tone-stage transfer function. Original metallic jade-green face with a vacuum-tube emblem.
+- Feral Hound (id "ad"): our model of the VFE Alpha Dog v2 (a RAT-style LM308 distortion), traced from
+  the stripboard layout in schematics/VFE/Alpha Dog. Gain / Filter / Level (big knobs) and Fat / Soft / Hard
+  (small knobs), footswitch = bypass. Soft and Hard have a centre detent (noon = no added clipping;
+  double-click = noon): Soft CCW = germanium, CW = MOSFET in the op-amp feedback; Hard CCW = stacked
+  silicon, CW = classic single pair to ground. Slew-limited LM308 model. Original matte-black face.
+- Overdrive, Distortion, Fuzz: generic placeholders.
+
+## Third-party assets
+- Assets/AlfaSlabOne-Regular.ttf: Alfa Slab One by JM Solé, SIL Open Font License 1.1
+  (Assets/AlfaSlabOne-OFL.txt). Free to embed in the plugin, including commercially.
+- Assets/MetalMania-Regular.ttf: Metal Mania, SIL Open Font License 1.1 (Assets/MetalMania-OFL.txt).
+- Assets/Rye-Regular.ttf: Rye, SIL Open Font License 1.1 (Assets/Rye-OFL.txt).
+- Assets/Poppins-BoldItalic.ttf: Poppins, SIL Open Font License 1.1 (Assets/Poppins-OFL.txt).
+- Assets/BlackOpsOne-Regular.ttf: Black Ops One, SIL Open Font License 1.1 (Assets/BlackOpsOne-OFL.txt).
+
+## Photoreal pedal graphics (Blender)
+Each pedal with artwork has Tools/Blender/render_<pedal>.py (shared code in pedal_render_common.py).
+Run from this folder, then rebuild (cmake -B build ... and cmake --build ...):
+    & "C:\Program Files\Blender Foundation\Blender 5.2\blender.exe" -b -P Tools\Blender\render_buzzsaw.py -- --quick
+Drop "-- --quick" for the final render. Without renders a pedal shows a vector fallback face.
+
+Hovering a pedal's name shows which real pedal it is based on (PedalBase::getBasedOn()).
+
+## Status
+Built and played on Windows (VS 2026, JUCE 8.0.15). Each new pedal is also build-tested on Linux
+with headless audio tests before delivery.
