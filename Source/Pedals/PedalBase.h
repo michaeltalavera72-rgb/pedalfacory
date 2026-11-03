@@ -34,4 +34,7 @@ public:
 
     juce::StringArray knobIds;   // parameter ids the editor should show as knobs
     juce::StringArray detentKnobIds;   // knobs with a centre detent: snap to noon, double-click = noon
+    // Optional mini toggle switch on the face (e.g. a voicing switch). Bool parameter, true = up/ON.
+    // Not a footswitch: it never bypasses the pedal.
+    juce::String toggleId, toggleLabel;
 };

@@ -35,6 +35,8 @@ Drag a pedal by its title bar to reorder; X removes; "+ Add pedal" adds.
 Subclass DriveBase (or PedalBase) and register it in PedalboardProcessor::makeLayout.
 A second footswitch (e.g. boost): override secondarySwitchId()/secondarySwitchLabel(), bind
 secondaryParam, and handle primaryOn()/secondaryOn() in process(); the face gets two switches + LEDs.
+A mini toggle switch (e.g. a voicing switch, never a bypass): set toggleId (a bool parameter, true = up)
+and toggleLabel; with 6 knobs the face uses the Slow Burn layout (FaceLayout::make(..., withToggle)).
 Optional artwork: write a PedalFace (see Source/Faces/PedalFaces.cpp) and return it from
 createFaceFor() for the pedal's id. Without a face the pedal gets the plain generic strip.
 
@@ -55,6 +57,13 @@ createFaceFor() for the pedal's id. Without a face the pedal gets the plain gene
   (small knobs), footswitch = bypass. Soft and Hard have a centre detent (noon = no added clipping;
   double-click = noon): Soft CCW = germanium, CW = MOSFET in the op-amp feedback; Hard CCW = stacked
   silicon, CW = classic single pair to ground. Slew-limited LM308 model. Original matte-black face.
+- Slow Burn (id "sb"): built on the Soldano Super Lead Overdrive pedal (the SLO-100 amp in a box), traced from
+  the stripboard layout in schematics/Soldano, with a modeled 12AX7 (the SLO-100's preamp valve) in place of
+  the pedal's two big op-amp gain stages. Gain / Presence / Volume (big knobs), Bass / Middle / Treble (small),
+  DEEP mini toggle (up = full low end), footswitch = bypass. Koren 12AX7 model with grid current and Miller
+  capacitance, B+ 250 V; exact SLO tone stack, presence/deep power stage and output network. Small-signal
+  voicing matches the real (op-amp) circuit within 0.5 dB from 50 Hz to 6 kHz
+  (Tools/Analysis/slo_reference_response.py). Original gloss-black and gold face with the valve in a window.
 - Overdrive, Distortion, Fuzz: generic placeholders.
 
 ## Third-party assets
@@ -64,6 +73,7 @@ createFaceFor() for the pedal's id. Without a face the pedal gets the plain gene
 - Assets/Rye-Regular.ttf: Rye, SIL Open Font License 1.1 (Assets/Rye-OFL.txt).
 - Assets/Poppins-BoldItalic.ttf: Poppins, SIL Open Font License 1.1 (Assets/Poppins-OFL.txt).
 - Assets/BlackOpsOne-Regular.ttf: Black Ops One, SIL Open Font License 1.1 (Assets/BlackOpsOne-OFL.txt).
+- Assets/CinzelDecorative-Bold.ttf: Cinzel Decorative, SIL Open Font License 1.1 (Assets/CinzelDecorative-OFL.txt).
 
 ## Photoreal pedal graphics (Blender)
 Each pedal with artwork has Tools/Blender/render_<pedal>.py (shared code in pedal_render_common.py).

@@ -141,3 +141,65 @@ public:
         g.fillEllipse(cap.reduced(cap.getWidth() * 0.28f).translated(-cap.getWidth() * 0.08f, -cap.getWidth() * 0.08f));
     }
 };
+
+// Small chrome bat-handle toggle (e.g. a voicing switch). Toggle state true = lever up = ON.
+class MiniToggle : public juce::Button
+{
+public:
+    MiniToggle() : juce::Button("Toggle") { setClickingTogglesState(true); }
+
+    // Optional rendered images (lever up / down); when valid they are drawn instead of the vector toggle.
+    std::function<const juce::Image*(bool up)> imageFor;
+
+    void paintButton(juce::Graphics& g, bool over, bool) override
+    {
+        using namespace juce;
+        const bool up = getToggleState();
+        if (imageFor)
+            if (auto* img = imageFor(up); img != nullptr && img->isValid())
+            {
+                g.setImageResamplingQuality(Graphics::highResamplingQuality);
+                g.setOpacity(1.0f);
+                g.drawImage(*img, getLocalBounds().toFloat());
+                return;
+            }
+        auto r = getLocalBounds().toFloat();
+        const float w = jmin(r.getWidth(), r.getHeight() * 0.62f);
+        const auto c = r.getCentre();
+        const float R = w * 0.5f;
+        // hex nut + bushing
+        Path hex;
+        for (int i = 0; i < 6; ++i)
+        {
+            const float a = MathConstants<float>::twoPi * (float) i / 6.0f;
+            const Point<float> pt { c.x + std::cos(a) * R, c.y + std::sin(a) * R };
+            if (i == 0) hex.startNewSubPath(pt); else hex.lineTo(pt);
+        }
+        hex.closeSubPath();
+        g.setColour(Colours::black.withAlpha(0.35f));
+        g.fillPath(hex, AffineTransform::translation(1.0f, 2.0f));
+        g.setGradientFill(ColourGradient(Colour(0xffe6e8ea), c.x - R, c.y - R, Colour(0xff7d8186), c.x + R, c.y + R, false));
+        g.fillPath(hex);
+        g.setColour(Colour(0xff55595e)); g.strokePath(hex, PathStrokeType(0.8f));
+        const float rb = R * 0.55f;
+        g.setGradientFill(ColourGradient(Colour(0xfff4f5f6), c.x - rb, c.y - rb, Colour(0xff6b6f74), c.x + rb, c.y + rb, false));
+        g.fillEllipse(c.x - rb, c.y - rb, rb * 2, rb * 2);
+        // bat lever, seen from above at an angle: tapers towards the tip
+        const float len = r.getHeight() * 0.46f, dir = up ? -1.0f : 1.0f;
+        const Point<float> tip { c.x, c.y + dir * len };
+        Path lever;
+        lever.startNewSubPath(c.x - rb * 0.45f, c.y);
+        lever.lineTo(tip.x - rb * 0.62f, tip.y);
+        lever.lineTo(tip.x + rb * 0.62f, tip.y);
+        lever.lineTo(c.x + rb * 0.45f, c.y);
+        lever.closeSubPath();
+        g.setColour(Colours::black.withAlpha(0.35f));
+        g.fillPath(lever, AffineTransform::translation(1.5f, 2.5f));
+        g.setGradientFill(ColourGradient(Colour(0xffffffff), c.x - rb, c.y, Colour(0xff8d9196), c.x + rb, c.y, false));
+        g.fillPath(lever);
+        g.fillEllipse(tip.x - rb * 0.68f, tip.y - rb * 0.68f, rb * 1.36f, rb * 1.36f);
+        g.setColour(Colour(0xff5d6166));
+        g.strokePath(lever, PathStrokeType(0.7f));
+        if (over) { g.setColour(Colours::white.withAlpha(0.12f)); g.fillEllipse(r.reduced(1.0f)); }
+    }
+};

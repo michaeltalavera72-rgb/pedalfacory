@@ -10,6 +10,7 @@ PedalboardProcessor::makeLayout(std::vector<std::unique_ptr<PedalBase>>& pedals)
     pedals.push_back(std::make_unique<RailBender>());
     pedals.push_back(std::make_unique<ValveHowler>());
     pedals.push_back(std::make_unique<FeralHound>());
+    pedals.push_back(std::make_unique<SlowBurn>());
     pedals.push_back(std::make_unique<Overdrive>());
     pedals.push_back(std::make_unique<Distortion>());
     pedals.push_back(std::make_unique<Fuzz>());

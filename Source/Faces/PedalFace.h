@@ -16,6 +16,8 @@ public:
     virtual juce::Rectangle<float> knobBounds(juce::Rectangle<float> r) const { return r; }   // area the knob draws in
     virtual juce::Rectangle<float> switchBounds(juce::Rectangle<float> r) const { return r; }
     virtual const juce::Image* footswitchImage(bool /*down*/) const { return nullptr; }
+    virtual juce::Rectangle<float> toggleBounds(juce::Rectangle<float> r) const { return r; }
+    virtual const juce::Image* toggleImage(bool /*up*/) const { return nullptr; }
 };
 
 // Returns the face for a pedal id, or nullptr. Register new faces in PedalFaces.cpp.

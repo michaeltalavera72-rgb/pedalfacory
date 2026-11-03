@@ -14,8 +14,11 @@ struct FaceLayout
     bool twoSwitches = false;
     juce::Rectangle<float> led2, footswitch2, switchLabel1, switchLabel2;
     bool secondaryOn = false;            // state of the second LED, filled in by the strip
+    // Optional mini toggle (PedalBase::toggleId), with its printed label above it.
+    bool hasToggle = false;
+    juce::Rectangle<float> toggle, toggleLabel;
 
-    static FaceLayout make(juce::Rectangle<float> body, int numKnobs, int numSwitches = 1)
+    static FaceLayout make(juce::Rectangle<float> body, int numKnobs, int numSwitches = 1, bool withToggle = false)
     {
         FaceLayout f; f.body = body;
         const float W = body.getWidth(), H = body.getHeight(), x0 = body.getX(), y0 = body.getY();
@@ -58,6 +61,19 @@ struct FaceLayout
             f.footswitch = juce::Rectangle<float>(sw, sw).withCentre({ x0 + W * 0.5f, y0 + H * 0.905f });
             f.led      = juce::Rectangle<float>(11.0f, 11.0f).withCentre({ x0 + W * 0.80f, y0 + H * 0.905f });
             f.subtitle = juce::Rectangle<float>(W * 0.30f, H * 0.04f).withCentre({ x0 + W * 0.205f, y0 + H * 0.905f });
+        }
+        if (numKnobs == 6 && withToggle)
+        {
+            // Slow Burn: same two knob rows; name, then a wide window (the "emblem": the valve), the subtitle
+            // under it, and a bottom row of DEEP toggle / footswitch / LED.
+            f.name     = { x0 + W * 0.08f, y0 + H * 0.432f, W * 0.84f, H * 0.092f };
+            f.emblem   = juce::Rectangle<float>(W * 0.76f, H * 0.175f).withCentre({ x0 + W * 0.5f, y0 + H * 0.618f });
+            f.subtitle = juce::Rectangle<float>(W * 0.70f, H * 0.038f).withCentre({ x0 + W * 0.5f, y0 + H * 0.737f });
+            f.footswitch = juce::Rectangle<float>(sw, sw).withCentre({ x0 + W * 0.5f, y0 + H * 0.895f });
+            f.led      = juce::Rectangle<float>(11.0f, 11.0f).withCentre({ x0 + W * 0.80f, y0 + H * 0.895f });
+            f.hasToggle = true;
+            f.toggle      = juce::Rectangle<float>(W * 0.10f, W * 0.16f).withCentre({ x0 + W * 0.20f, y0 + H * 0.905f });
+            f.toggleLabel = juce::Rectangle<float>(W * 0.24f, H * 0.032f).withCentre({ x0 + W * 0.20f, y0 + H * 0.812f });
         }
         if (numSwitches >= 2)
         {

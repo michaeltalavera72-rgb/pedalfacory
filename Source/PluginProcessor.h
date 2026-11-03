@@ -5,6 +5,7 @@
 #include "Pedals/RailBender.h"
 #include "Pedals/ValveHowler.h"
 #include "Pedals/FeralHound.h"
+#include "Pedals/SlowBurn.h"
 
 class PedalboardProcessor : public juce::AudioProcessor, public juce::ChangeBroadcaster
 {

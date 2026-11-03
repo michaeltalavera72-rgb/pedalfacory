@@ -43,6 +43,13 @@ PedalStrip::PedalStrip(PedalboardProcessor& p, PedalBase& pd, BoardComponent& b)
             footswitch.setTooltip("Drive on/off");
             footswitch2.setTooltip(pd.secondarySwitchLabel() + " on/off");
         }
+        if (pd.toggleId.isNotEmpty())
+        {
+            toggle.imageFor = [this](bool up) { return face->toggleImage(up); };
+            addAndMakeVisible(toggle);
+            toggleAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(p.apvts, pd.toggleId, toggle);
+            toggle.setTooltip(pd.toggleLabel.substring(0, 1) + pd.toggleLabel.substring(1).toLowerCase() + " on/off");
+        }
         startTimerHz(20);
     }
     lastPrimary = pedal.primaryOn(); lastSecondary = pedal.secondaryOn();
@@ -62,7 +69,7 @@ void PedalStrip::timerCallback()
 }
 FaceLayout PedalStrip::layout() const
 {
-    auto f = FaceLayout::make(bodyBounds(), knobs.size(), numSwitches());
+    auto f = FaceLayout::make(bodyBounds(), knobs.size(), numSwitches(), pedal.toggleId.isNotEmpty());
     f.secondaryOn = pedal.secondaryOn();
     return f;
 }
@@ -104,6 +111,7 @@ void PedalStrip::resized()
         }
         footswitch.setBounds(face->switchBounds(f.footswitch).toNearestInt());
         if (f.twoSwitches) footswitch2.setBounds(face->switchBounds(f.footswitch2).toNearestInt());
+        if (f.hasToggle) toggle.setBounds(face->toggleBounds(f.toggle).toNearestInt());
         return;
     }
     auto r = bodyBounds().toNearestInt().reduced(8);

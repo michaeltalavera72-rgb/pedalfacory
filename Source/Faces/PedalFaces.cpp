@@ -116,10 +116,6 @@ protected:
         g.fillEllipse(l);
     }
 
-private:
-    juce::Image face, switchUp, switchDn, ledOn, ledOff;
-    std::unique_ptr<FilmstripKnobLookAndFeel> knobLook;
-
     static juce::Image loadImage(const juce::String& resourceName)
     {
         int size = 0;
@@ -127,6 +123,10 @@ private:
             return juce::ImageCache::getFromMemory(data, size);
         return {};
     }
+
+private:
+    juce::Image face, switchUp, switchDn, ledOn, ledOff;
+    std::unique_ptr<FilmstripKnobLookAndFeel> knobLook;
 
     void paintRendered(juce::Graphics& g, const FaceLayout& f, bool active)
     {
@@ -645,6 +645,199 @@ private:
     juce::Image dog;
 };
 
+
+// ---------------------------------------------------------------------------
+// Slow Burn: gloss black enclosure, gold ink, "SLOW BURN" in Cinzel Decorative, and a 12AX7 lying in a
+// chrome-framed window, heaters glowing (brighter when the pedal is on). Six knobs in two rows
+// (Gain/Presence/Volume big, Bass/Middle/Treble small), DEEP mini toggle left of the footswitch, LED right.
+// Original design. Rendered images (Tools/Blender/render_slowburn.py) add slowburn_tube_on/off (the valve
+// window, glow baked) and slowburn_toggle_up/down.
+namespace
+{
+    const juce::Colour glossBlack { 0xff0d0d0f }, glossDeep { 0xff030304 }, goldInk { 0xffd4a64a },
+                       goldLight { 0xfff3d488 }, goldDark { 0xff8c6420 };
+
+    juce::Typeface::Ptr cinzelTypeface()
+    {
+        static auto tf = juce::Typeface::createSystemTypefaceFor(BinaryData::CinzelDecorativeBold_ttf,
+                                                                 (size_t) BinaryData::CinzelDecorativeBold_ttfSize);
+        return tf;
+    }
+}
+
+class SlowBurnFace : public RenderedFace
+{
+public:
+    static constexpr float tubePad = 1.10f, togglePad = 1.30f;    // = render_slowburn.py
+
+    SlowBurnFace() : RenderedFace("slowburn")
+    {
+        tubeOn = loadImage("slowburn_tube_on_png");   tubeOff = loadImage("slowburn_tube_off_png");
+        toggleUp = loadImage("slowburn_toggle_up_png"); toggleDn = loadImage("slowburn_toggle_down_png");
+    }
+    juce::Colour labelColour() const override { return goldInk; }
+    juce::Rectangle<float> toggleBounds(juce::Rectangle<float> r) const override
+    {
+        return rendered() && toggleUp.isValid() ? r.withSizeKeepingCentre(r.getWidth() * togglePad, r.getHeight() * togglePad) : r;
+    }
+    const juce::Image* toggleImage(bool up) const override
+    {
+        if (! rendered()) return nullptr;
+        auto& img = up ? toggleUp : toggleDn;
+        return img.isValid() ? &img : nullptr;
+    }
+    void paint(juce::Graphics& g, const FaceLayout& f, bool active) override
+    {
+        RenderedFace::paint(g, f, active);
+        if (rendered())
+            if (auto& img = active ? tubeOn : tubeOff; img.isValid())
+            {
+                g.setOpacity(1.0f);
+                g.drawImage(img, f.emblem.withSizeKeepingCentre(f.emblem.getWidth() * tubePad, f.emblem.getHeight() * tubePad));
+            }
+    }
+
+    // The valve in its window (also used for the vector face).
+    static void drawTubeWindow(juce::Graphics& g, juce::Rectangle<float> w, bool active)
+    {
+        using namespace juce;
+        const float cr = w.getHeight() * 0.22f;
+        // chrome bezel
+        g.setColour(Colours::black.withAlpha(0.5f));
+        g.fillRoundedRectangle(w.translated(0.0f, 2.0f), cr);
+        g.setGradientFill(ColourGradient(Colour(0xfff2f3f5), w.getX(), w.getY(), Colour(0xff6c7075), w.getRight(), w.getBottom(), false));
+        g.fillRoundedRectangle(w, cr);
+        auto in = w.reduced(w.getHeight() * 0.075f);
+        g.setGradientFill(ColourGradient(Colour(0xff050506), in.getX(), in.getY(), Colour(0xff1a1410), in.getX(), in.getBottom(), false));
+        g.fillRoundedRectangle(in, cr * 0.7f);
+
+        // glass envelope lying left-right, pins to the left, getter flash at the right end
+        auto glass = in.reduced(in.getWidth() * 0.07f, in.getHeight() * 0.17f).translated(in.getWidth() * 0.02f, 0.0f);
+        const float gr = glass.getHeight() * 0.5f;
+        const float glow = active ? 1.0f : 0.45f;
+        // warm light inside the glass
+        for (int k = 0; k < 2; ++k)
+        {
+            const auto c = Point<float>(glass.getX() + glass.getWidth() * (k == 0 ? 0.36f : 0.62f), glass.getCentreY());
+            const float R = glass.getHeight() * 0.95f;
+            ColourGradient rg(Colour(0xffff9a3a).withAlpha(0.55f * glow), c.x, c.y, Colour(0x00ff6a00), c.x + R, c.y, true);
+            g.setGradientFill(rg);
+            g.fillEllipse(c.x - R, c.y - R, R * 2, R * 2);
+        }
+        g.setColour(Colour(0xff2c2622).withAlpha(0.55f));
+        g.fillRoundedRectangle(glass, gr);
+        // plates (two triodes), mica spacers, heaters
+        const float pw = glass.getWidth() * 0.20f, ph = glass.getHeight() * 0.62f;
+        for (int k = 0; k < 2; ++k)
+        {
+            const float cx = glass.getX() + glass.getWidth() * (k == 0 ? 0.36f : 0.62f);
+            auto plate = Rectangle<float>(pw, ph).withCentre({ cx, glass.getCentreY() });
+            g.setGradientFill(ColourGradient(Colour(0xff7a7470), plate.getX(), plate.getY(), Colour(0xff2a2826), plate.getX(), plate.getBottom(), false));
+            g.fillRect(plate);
+            g.setColour(Colour(0xff151312));
+            for (int i = 1; i < 4; ++i) g.drawVerticalLine((int) (plate.getX() + plate.getWidth() * (float) i / 4.0f), plate.getY(), plate.getBottom());
+            auto slit = plate.withSizeKeepingCentre(plate.getWidth() * 0.55f, plate.getHeight() * 0.16f);
+            g.setColour(Colour(0xffffb347).withAlpha(0.95f * glow));
+            g.fillRoundedRectangle(slit, slit.getHeight() * 0.5f);
+            g.setColour(Colour(0xffffe2a8).withAlpha(0.8f * glow));
+            g.fillRoundedRectangle(slit.reduced(slit.getWidth() * 0.2f, slit.getHeight() * 0.25f), 1.0f);
+        }
+        g.setColour(Colour(0xffd9d2c4).withAlpha(0.55f));                       // mica spacers
+        for (float fx : { 0.22f, 0.49f, 0.76f })
+            g.fillRect(Rectangle<float>(1.6f, glass.getHeight() * 0.86f).withCentre({ glass.getX() + glass.getWidth() * fx, glass.getCentreY() }));
+        // getter flash (silver) at the dome end
+        auto dome = glass.withLeft(glass.getRight() - glass.getHeight() * 0.9f);
+        g.setGradientFill(ColourGradient(Colour(0xffd8dadc).withAlpha(0.9f), dome.getRight(), dome.getCentreY(),
+                                         Colour(0x00a0a4a8), dome.getX(), dome.getCentreY(), false));
+        g.fillRoundedRectangle(dome, gr);
+        // base pins + socket
+        auto sock = Rectangle<float>(in.getWidth() * 0.075f, glass.getHeight() * 1.18f).withCentre({ glass.getX() - in.getWidth() * 0.02f, glass.getCentreY() });
+        g.setGradientFill(ColourGradient(Colour(0xff3a3530), sock.getX(), sock.getY(), Colour(0xff141210), sock.getRight(), sock.getBottom(), false));
+        g.fillRoundedRectangle(sock, 2.0f);
+        // glass outline + highlight
+        g.setColour(Colours::white.withAlpha(0.35f));
+        g.drawRoundedRectangle(glass, gr, 1.0f);
+        g.setColour(Colours::white.withAlpha(0.28f));
+        g.fillRoundedRectangle(glass.withHeight(glass.getHeight() * 0.13f).translated(0.0f, glass.getHeight() * 0.13f).reduced(gr, 0.0f), 2.0f);
+        // window glass reflection
+        g.setColour(Colours::white.withAlpha(0.06f));
+        g.fillRoundedRectangle(in.withHeight(in.getHeight() * 0.42f), cr * 0.7f);
+    }
+
+protected:
+    void paintVector(juce::Graphics& g, const FaceLayout& f, bool active) override
+    {
+        using namespace juce;
+        const auto b = f.body;
+        g.setColour(Colours::black.withAlpha(0.45f));
+        g.fillRoundedRectangle(b.translated(0, 3), 9.0f);
+        g.setGradientFill(ColourGradient(Colour(0xff1e1e22), b.getX(), b.getY(), glossDeep, b.getRight(), b.getBottom(), false));
+        g.fillRoundedRectangle(b, 9.0f);
+        // gloss: a soft diagonal reflection band
+        {
+            Path band;
+            band.startNewSubPath(b.getX(), b.getY() + b.getHeight() * 0.10f);
+            band.lineTo(b.getX() + b.getWidth() * 0.55f, b.getY());
+            band.lineTo(b.getX() + b.getWidth() * 0.80f, b.getY());
+            band.lineTo(b.getX(), b.getY() + b.getHeight() * 0.36f);
+            band.closeSubPath();
+            g.saveState();
+            Path clip; clip.addRoundedRectangle(b, 9.0f);
+            g.reduceClipRegion(clip);
+            g.setGradientFill(ColourGradient(Colours::white.withAlpha(0.07f), b.getX(), b.getY(), Colours::white.withAlpha(0.0f),
+                                             b.getX() + b.getWidth() * 0.4f, b.getY() + b.getHeight() * 0.3f, false));
+            g.fillPath(band);
+            g.restoreState();
+        }
+        g.setColour(Colours::white.withAlpha(0.14f));
+        g.drawRoundedRectangle(b.reduced(0.75f), 9.0f, 1.2f);
+        const float sr = 4.0f, inset = 9.0f;
+        drawScrew(g, { b.getX() + inset, b.getY() + inset }, sr, 0.3f);
+        drawScrew(g, { b.getRight() - inset, b.getY() + inset }, sr, 1.0f);
+        drawScrew(g, { b.getX() + inset, b.getBottom() - inset }, sr, 0.6f);
+        drawScrew(g, { b.getRight() - inset, b.getBottom() - inset }, sr, 1.4f);
+
+        // gold pinstripe frame around the lower panel (= render_slowburn.py PANEL)
+        g.setColour(goldInk.withAlpha(0.85f));
+        g.drawRoundedRectangle(panelRect(b), b.getWidth() * 0.035f, 1.2f);
+
+        // name: gold with a darker edge and a faint warm glow
+        GlyphArrangement ga;
+        const Font nameFont(FontOptions(cinzelTypeface()).withHeight(f.name.getHeight() * 1.0f));
+        ga.addFittedText(nameFont, "SLOW BURN", f.name.getX(), f.name.getY(), f.name.getWidth(), f.name.getHeight(),
+                         Justification::centred, 1, 0.8f);
+        Path text; ga.createPath(text);
+        DropShadow(Colour(0xffff8a2a).withAlpha(active ? 0.22f : 0.10f), 8, {}).drawForPath(g, text);
+        const auto tb = text.getBounds();
+        g.setGradientFill(ColourGradient(goldLight, tb.getX(), tb.getY(), goldDark, tb.getX(), tb.getBottom(), false));
+        g.fillPath(text);
+        g.setColour(goldDark.darker(0.4f));
+        g.strokePath(text, PathStrokeType(0.6f));
+
+        drawTubeWindow(g, f.emblem, active);
+
+        g.setColour(goldInk);
+        g.setFont(Font(FontOptions(f.subtitle.getHeight() * 0.72f, Font::bold).withKerningFactor(0.25f)));
+        g.drawText("12AX7 TUBE DRIVE", f.subtitle, Justification::centred);
+        if (f.hasToggle)
+        {
+            g.setFont(Font(FontOptions(f.toggleLabel.getHeight() * 0.80f, Font::bold).withKerningFactor(0.2f)));
+            g.drawText("DEEP", f.toggleLabel, Justification::centred);
+        }
+        drawLed(g, f.led, active);
+    }
+
+public:
+    static juce::Rectangle<float> panelRect(juce::Rectangle<float> b)
+    {
+        return { b.getX() + b.getWidth() * 0.06f, b.getY() + b.getHeight() * 0.424f,
+                 b.getWidth() * 0.88f, b.getHeight() * 0.349f };
+    }
+
+private:
+    juce::Image tubeOn, tubeOff, toggleUp, toggleDn;
+};
+
 // ---------------------------------------------------------------------------
 std::unique_ptr<PedalFace> createFaceFor(const juce::String& pedalId)
 {
@@ -653,5 +846,6 @@ std::unique_ptr<PedalFace> createFaceFor(const juce::String& pedalId)
     if (pedalId == "rb") return std::make_unique<RailBenderFace>();
     if (pedalId == "ts") return std::make_unique<ValveHowlerFace>();
     if (pedalId == "ad") return std::make_unique<FeralHoundFace>();
+    if (pedalId == "sb") return std::make_unique<SlowBurnFace>();
     return nullptr;
 }
