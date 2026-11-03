@@ -29,9 +29,9 @@ FONT_NAME = os.path.join(ROOT, "Assets", "BlackOpsOne-Regular.ttf")
 DOG_IMAGE = os.path.join(ROOT, "Assets", "feralhound_dog.png")
 FONT_LABEL_CANDIDATES = [r"C:\Windows\Fonts\arialbd.ttf", r"C:\Windows\Fonts\segoeuib.ttf"]
 
-W, H = 91.0, 120.0
+W, H = 91.0, 91.0 * 372.0 / 226.0          # = plugin pedal body 226 x 372 px (v28; was 120 mm / 298 px)
 UI_BODY_PX = 226.0
-UI_BODY_PX_H = 298.0
+UI_BODY_PX_H = 372.0
 MM_PER_PX = W / UI_BODY_PX
 KNOB_PAD, SWITCH_PAD, LED_PAD = 1.30, 1.35, 2.6
 

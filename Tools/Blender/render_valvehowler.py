@@ -28,9 +28,9 @@ TMP = os.path.join(HERE, "_frames_valvehowler")
 FONT_NAME = os.path.join(ROOT, "Assets", "Poppins-BoldItalic.ttf")
 FONT_LABEL_CANDIDATES = [r"C:\Windows\Fonts\arialbd.ttf", r"C:\Windows\Fonts\segoeuib.ttf"]
 
-W, H = 91.0, 120.0
+W, H = 91.0, 91.0 * 372.0 / 226.0          # = plugin pedal body 226 x 372 px (v28; was 120 mm / 298 px)
 UI_BODY_PX = 226.0
-UI_BODY_PX_H = 298.0
+UI_BODY_PX_H = 372.0
 MM_PER_PX = W / UI_BODY_PX
 PX_PER_MM = UI_BODY_PX / W * ST.oversample
 KNOB_PAD, SWITCH_PAD, LED_PAD = 1.30, 1.35, 2.6

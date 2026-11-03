@@ -47,7 +47,7 @@ private:
 class BoardComponent : public juce::Component, private juce::Timer
 {
 public:
-    static constexpr int slotW = 230, gap = 8, headerH = 26, boardH = 340;
+    static constexpr int slotW = 230, gap = 8, headerH = 26, boardH = 414;   // pedal body 226 x 372 (= FaceLayout::bodyAspect)
     explicit BoardComponent(PedalboardProcessor&);
     void rebuild();
     void layoutSlots(bool animate);

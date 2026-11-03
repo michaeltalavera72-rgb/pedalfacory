@@ -26,7 +26,7 @@ TMP = os.path.join(HERE, "_frames_buzzsaw")
 FONT_NAME = os.path.join(ROOT, "Assets", "MetalMania-Regular.ttf")
 FONT_LABEL_CANDIDATES = [r"C:\Windows\Fonts\arialbd.ttf", r"C:\Windows\Fonts\segoeuib.ttf"]
 
-W, H = 91.0, 120.0
+W, H = 91.0, 91.0 * 372.0 / 226.0          # = plugin pedal body 226 x 372 px (v28; was 120 mm / 298 px)
 UI_BODY_PX = 226.0
 PX_PER_MM = UI_BODY_PX / W * ST.oversample
 KNOB_PAD, SWITCH_PAD, LED_PAD = 1.30, 1.35, 2.6
@@ -45,7 +45,7 @@ KNOB_D = W * 0.19
 KNOB_TOP = 0.055
 KNOB_CX = [0.15 + 0.70 * i / 3 for i in range(4)]
 KNOB_CY_FRAC = KNOB_TOP + (KNOB_D / H) * 0.5
-LABEL_CY_FRAC = KNOB_TOP + (KNOB_D / H) + 9.5 / 298.0
+LABEL_CY_FRAC = KNOB_TOP + (KNOB_D / H) + 9.5 / 372.0
 NAME = (0.06, 0.355, 0.88, 0.135)
 SUB = (0.06, 0.49, 0.88, 0.065)
 EMBLEM = (0.26, 0.565, 0.48, 0.135)
@@ -103,7 +103,7 @@ def build(scene):
     C.text_obj("Sub", "DISTORTION", label_font, bone, (scx, scy, SUB[2] * W * 0.62, SUB[3] * H * 0.62), face, spacing=1.6)
     for i, (label, cxf) in enumerate(zip(["LEVEL", "LOW", "HIGH", "DIST"], KNOB_CX)):
         C.text_obj(f"Label{i}", label, label_font, bone,
-                   (fx(cxf), fy(LABEL_CY_FRAC), KNOB_D * 1.15, 13.0 / 298.0 * H * 0.7), face, spacing=1.05)
+                   (fx(cxf), fy(LABEL_CY_FRAC), KNOB_D * 1.15, 13.0 / 372.0 * H * 0.7), face, spacing=1.05)
 
     # saw-blade emblem (+ black drop shadow) and a red "hole" in the middle
     ecx, ecy = rect_center(EMBLEM)

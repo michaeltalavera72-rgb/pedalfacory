@@ -64,6 +64,8 @@ public:
     explicit RenderedFace(const juce::String& prefix)
     {
         face      = loadImage(prefix + "_face_png");
+        if (face.isValid() && std::abs((float) face.getHeight() / (float) face.getWidth() - FaceLayout::bodyAspect) > 0.02f)
+            face = {};                     // rendered for an older body shape: use the vector face until re-rendered
         switchUp  = loadImage(prefix + "_switch_up_png");
         switchDn  = loadImage(prefix + "_switch_down_png");
         ledOn     = loadImage(prefix + "_led_on_png");

@@ -31,20 +31,21 @@ TMP = os.path.join(HERE, "_frames_slowburn")
 ART_IMAGE = os.path.join(ROOT, "Assets", "slowburn_art.png")
 FONT_LABEL_CANDIDATES = [r"C:\Windows\Fonts\arialbd.ttf", r"C:\Windows\Fonts\segoeuib.ttf"]
 
-W, H = 91.0, 120.0
+W, H = 91.0, 91.0 * 372.0 / 226.0          # = plugin pedal body 226 x 372 px (v28; was 120 mm / 298 px)
 UI_BODY_PX = 226.0
-UI_BODY_PX_H = 298.0
+UI_BODY_PX_H = 372.0
 MM_PER_PX = W / UI_BODY_PX
 KNOB_PAD, SWITCH_PAD, LED_PAD = 1.30, 1.35, 2.6
 TUBE_PAD, TOGGLE_PAD = 1.10, 1.30                       # = SlowBurnFace::tubePad / togglePad
 
 # Albedos darker/more saturated than the target look (AgX lifts and desaturates)
 GLOSS_BLACK = (0.002, 0.002, 0.0022, 1)       # quick render 1 (0.0045, spec 0.5, coat 1.0) read charcoal, sRGB ~78
-CREAM_INK = (0.86, 0.62, 0.30, 1)                      # target sRGB ~235,206,160 (the artwork's cream); AgX greys warm inks
-ORANGE_INK = (0.62, 0.055, 0.008, 1)                   # target ~208,66,23 (the artwork's burnt orange)
+CREAM_INK = (0.98, 0.66, 0.26, 1)                      # target sRGB ~235,206,160; (0.86,0.62,0.30) read khaki under AgX
+ORANGE_INK = (0.70, 0.045, 0.004, 1)                   # target ~208,66,23 (the artwork's burnt orange)
 STEEL_REFERENCE_TARGET = 0.74                          # same exposure basis as the other pedals
-HEATER_ON, HEATER_OFF = 14.0, 3.0                      # heater emission strength (38 burned out to white)
-GLOW_COLOUR = (1.0, 0.36, 0.07)
+HEATER_ON, HEATER_OFF = 22.0, 0.4                      # heater emission (38 = white; 14 = faint; off 1.5 looked nearly on)
+VALVE_LIGHT_ON, VALVE_LIGHT_OFF = 60.0, 0.0              # warm point light inside each triode (W); 15 W barely showed
+GLOW_COLOUR = (1.0, 0.30, 0.04)
 
 # ----------------------------------------------------------------------------- layout (= FaceLayout.h, 6 knobs + toggle)
 def fx(f): return -W / 2 + f * W
@@ -56,10 +57,10 @@ KNOB_LABELS = [["GAIN", "PRESENCE", "VOLUME"], ["BASS", "MIDDLE", "TREBLE"]]
 def knob_cy_frac(row): return KNOB_TOP[row] + ((KNOB_D_BIG, KNOB_D_SMALL)[row] / H) * 0.5
 def label_cy_frac(row):  # label rect: knob bottom + 1 px, 13 px tall
     return KNOB_TOP[row] + (KNOB_D_BIG, KNOB_D_SMALL)[row] / H + 7.5 / UI_BODY_PX_H
-ART_C, ART_WH = (0.31, 0.60), (W * 0.316, H * 0.36)    # printed artwork (2:3), mm
-WIN_C, WIN_WH = (0.72, 0.60), (W * 0.20, H * 0.34)    # the valve window (upright), mm
+ART_C, ART_WH = (0.29, 0.60), (W * 0.40, W * 0.60)     # printed artwork (2:3), mm
+WIN_C, WIN_WH = (0.73, 0.60), (W * 0.22, W * 0.56)    # the valve window (upright), mm
 WIN_R = min(WIN_WH) * 0.22                             # bezel corner radius
-SUB_C, SUB_WH = (0.72, 0.795), (0.40, 0.030)
+SUB_C, SUB_WH = (0.73, 0.795), (0.40, 0.030)
 SW_D = W * 0.19
 SW_CY_FRAC = 0.895
 LED_D = 11.0 / UI_BODY_PX * W
@@ -96,12 +97,14 @@ def mat_print(name, path, ref_obj):
     tex.image = bpy.data.images.load(path)
     tex.image.colorspace_settings.name = "sRGB"
     tex.interpolation = "Cubic"
-    g.l(tex.outputs["Color"], C.inp(p, "Base Color"))
+    hs = nt.nodes.new("ShaderNodeHueSaturation")           # quick render 2: print came out ~25 % darker and greyer
+    C.set_in(hs, "Saturation", 1.45); C.set_in(hs, "Value", 1.42)
+    g.l(tex.outputs["Color"], C.inp(hs, "Color")); g.l(hs.outputs["Color"], C.inp(p, "Base Color"))
     g.l(tex.outputs["Alpha"], C.inp(p, "Alpha"))
     co = C.body_coords(g, ref_obj)
     g.l(g.ramp(g.noise(co, 1.2, detail=6), [(0.3, 0.42), (0.7, 0.55)]), C.inp(p, "Roughness"))
-    C.set_in(p, ["Specular IOR Level", "Specular"], 0.15)
-    C.set_in(p, ["Coat Weight", "Clearcoat"], 0.45)          # printed under the same clear coat as the paint
+    C.set_in(p, ["Specular IOR Level", "Specular"], 0.08)
+    C.set_in(p, ["Coat Weight", "Clearcoat"], 0.20)          # thinner coat over the print: less white veil
     return m
 
 def art_plane(mat):
@@ -187,9 +190,14 @@ def valve(colls_on_off, mats, z_axis):
                             center=(x - pw / 2 + pw * j / 3, cy + sgn * (gap / 2 + ph / 2), z_axis), mat=mats["plate"])
                 parts.append(rib)
         for key in colls_on_off:
-            h = along_x(C.cylinder(f"Heater{k}{key}", gap * 0.40, pw * 0.86, z0=-pw * 0.43, verts=16,
+            h = along_x(C.cylinder(f"Heater{k}{key}", gap * 0.46, pw * 0.86, z0=-pw * 0.43, verts=16,
                                    mat=mats["heater_" + key]))
             h.location = (x, cy, z_axis + pz * 0.15); heaters[key].append(h)
+            ld = bpy.data.lights.new(f"Glow{k}{key}", "POINT")
+            ld.energy = VALVE_LIGHT_ON if key == "TubeOn" else VALVE_LIGHT_OFF
+            ld.color = GLOW_COLOUR; ld.shadow_soft_size = 0.6
+            lo = bpy.data.objects.new(f"Glow{k}{key}", ld); lo.location = (x, cy, z_axis + pz * 0.55)
+            heaters[key].append(lo)
     return parts, heaters
 
 # ----------------------------------------------------------------------------- build
@@ -219,11 +227,11 @@ def build(scene):
     knob_cap = C.mat_plastic("KnobCapGloss", (0.006, 0.006, 0.007, 1), rough=0.18, spec=0.45, coat=0.6, smudges=0.05)
     pointer = C.mat_simple("PointerCream", CREAM_INK, rough=0.45)
     recess = C.mat_simple("Recess", (0.022, 0.017, 0.012, 1), rough=0.8, spec=0.2)
-    vmats = dict(glass=mat_glass("Glass"), getter=C.mat_metal("Getter", (0.80, 0.80, 0.82, 1), 0.04, smudges=0.0),
+    vmats = dict(glass=mat_glass("Glass"), getter=C.mat_metal("Getter", (0.86, 0.86, 0.88, 1), 0.22, smudges=0.0),
                  bakelite=C.mat_plastic("Bakelite", (0.02, 0.012, 0.008, 1), rough=0.35, spec=0.4, smudges=0.0),
                  mica=C.mat_simple("Mica", (0.55, 0.50, 0.42, 1), rough=0.6),
                  rod=C.mat_metal("Rod", (0.6, 0.6, 0.62, 1), 0.3, smudges=0.0),
-                 plate=C.mat_metal("Plate", (0.07, 0.068, 0.066, 1), 0.48, smudges=0.0),
+                 plate=C.mat_metal("Plate", (0.16, 0.155, 0.15, 1), 0.40, smudges=0.0),
                  heater_TubeOn=mat_emit("HeaterOn", GLOW_COLOUR, HEATER_ON),
                  heater_TubeOff=mat_emit("HeaterOff", GLOW_COLOUR, HEATER_OFF))
 

@@ -5,6 +5,10 @@
 // face painter (graphics) and PedalStrip::resized (knob/footswitch components) agree.
 struct FaceLayout
 {
+    // Pedal body proportions (226 x 372 px since v28; was 226 x 298). Blender faces are rendered at this shape;
+    // a face image with a different shape is ignored (the vector face is shown) until it is re-rendered.
+    static constexpr float bodyAspect = 372.0f / 226.0f;
+
     juce::Rectangle<float> body;               // the whole enclosure
     juce::Array<juce::Rectangle<float>> knobs; // one square per knob, left to right
     juce::Array<juce::Rectangle<float>> labels;// text under each knob
@@ -68,10 +72,10 @@ struct FaceLayout
             // Slow Burn: same two knob rows; below them the printed artwork (left, 2:3, carries the name) and
             // the valve standing upright in a tall window (right), the subtitle under the window, and a bottom
             // row of DEEP toggle / footswitch / LED.
-            f.emblem   = juce::Rectangle<float>(W * 0.316f, H * 0.36f).withCentre({ x0 + W * 0.31f, y0 + H * 0.60f });
+            f.emblem   = juce::Rectangle<float>(W * 0.40f, W * 0.60f).withCentre({ x0 + W * 0.29f, y0 + H * 0.60f });   // 2:3 art
             f.name     = f.emblem;                                       // the artwork's lettering is the name
-            f.window   = juce::Rectangle<float>(W * 0.20f, H * 0.34f).withCentre({ x0 + W * 0.72f, y0 + H * 0.60f });
-            f.subtitle = juce::Rectangle<float>(W * 0.40f, H * 0.030f).withCentre({ x0 + W * 0.72f, y0 + H * 0.795f });
+            f.window   = juce::Rectangle<float>(W * 0.22f, W * 0.56f).withCentre({ x0 + W * 0.73f, y0 + H * 0.60f });
+            f.subtitle = juce::Rectangle<float>(W * 0.40f, H * 0.030f).withCentre({ x0 + W * 0.73f, y0 + H * 0.795f });
             f.footswitch = juce::Rectangle<float>(sw, sw).withCentre({ x0 + W * 0.5f, y0 + H * 0.895f });
             f.led      = juce::Rectangle<float>(11.0f, 11.0f).withCentre({ x0 + W * 0.80f, y0 + H * 0.895f });
             f.hasToggle = true;
