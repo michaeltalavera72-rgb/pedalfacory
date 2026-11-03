@@ -17,6 +17,7 @@ struct FaceLayout
     // Optional mini toggle (PedalBase::toggleId), with its printed label above it.
     bool hasToggle = false;
     juce::Rectangle<float> toggle, toggleLabel;
+    juce::Rectangle<float> window;           // optional second artwork area (Slow Burn: the valve window)
 
     static FaceLayout make(juce::Rectangle<float> body, int numKnobs, int numSwitches = 1, bool withToggle = false)
     {
@@ -64,11 +65,13 @@ struct FaceLayout
         }
         if (numKnobs == 6 && withToggle)
         {
-            // Slow Burn: same two knob rows; name, then a wide window (the "emblem": the valve), the subtitle
-            // under it, and a bottom row of DEEP toggle / footswitch / LED.
-            f.name     = { x0 + W * 0.08f, y0 + H * 0.432f, W * 0.84f, H * 0.092f };
-            f.emblem   = juce::Rectangle<float>(W * 0.76f, H * 0.175f).withCentre({ x0 + W * 0.5f, y0 + H * 0.618f });
-            f.subtitle = juce::Rectangle<float>(W * 0.70f, H * 0.038f).withCentre({ x0 + W * 0.5f, y0 + H * 0.737f });
+            // Slow Burn: same two knob rows; below them the printed artwork (left, 2:3, carries the name) and
+            // the valve standing upright in a tall window (right), the subtitle under the window, and a bottom
+            // row of DEEP toggle / footswitch / LED.
+            f.emblem   = juce::Rectangle<float>(W * 0.316f, H * 0.36f).withCentre({ x0 + W * 0.31f, y0 + H * 0.60f });
+            f.name     = f.emblem;                                       // the artwork's lettering is the name
+            f.window   = juce::Rectangle<float>(W * 0.20f, H * 0.34f).withCentre({ x0 + W * 0.72f, y0 + H * 0.60f });
+            f.subtitle = juce::Rectangle<float>(W * 0.40f, H * 0.030f).withCentre({ x0 + W * 0.72f, y0 + H * 0.795f });
             f.footswitch = juce::Rectangle<float>(sw, sw).withCentre({ x0 + W * 0.5f, y0 + H * 0.895f });
             f.led      = juce::Rectangle<float>(11.0f, 11.0f).withCentre({ x0 + W * 0.80f, y0 + H * 0.895f });
             f.hasToggle = true;

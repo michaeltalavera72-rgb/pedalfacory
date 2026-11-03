@@ -63,7 +63,8 @@ createFaceFor() for the pedal's id. Without a face the pedal gets the plain gene
   DEEP mini toggle (up = full low end), footswitch = bypass. Koren 12AX7 model with grid current and Miller
   capacitance, B+ 250 V; exact SLO tone stack, presence/deep power stage and output network. Small-signal
   voicing matches the real (op-amp) circuit within 0.5 dB from 50 Hz to 6 kHz
-  (Tools/Analysis/slo_reference_response.py). Original gloss-black and gold face with the valve in a window.
+  (Tools/Analysis/slo_reference_response.py). Gloss-black face with Michael's candle-and-sun artwork (Assets/slowburn_art.png) and the valve standing
+  upright in a window.
 - Overdrive, Distortion, Fuzz: generic placeholders.
 
 ## Third-party assets
@@ -73,7 +74,6 @@ createFaceFor() for the pedal's id. Without a face the pedal gets the plain gene
 - Assets/Rye-Regular.ttf: Rye, SIL Open Font License 1.1 (Assets/Rye-OFL.txt).
 - Assets/Poppins-BoldItalic.ttf: Poppins, SIL Open Font License 1.1 (Assets/Poppins-OFL.txt).
 - Assets/BlackOpsOne-Regular.ttf: Black Ops One, SIL Open Font License 1.1 (Assets/BlackOpsOne-OFL.txt).
-- Assets/CinzelDecorative-Bold.ttf: Cinzel Decorative, SIL Open Font License 1.1 (Assets/CinzelDecorative-OFL.txt).
 
 ## Photoreal pedal graphics (Blender)
 Each pedal with artwork has Tools/Blender/render_<pedal>.py (shared code in pedal_render_common.py).

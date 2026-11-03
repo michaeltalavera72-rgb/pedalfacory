@@ -1,11 +1,12 @@
 """
 Slow Burn - photoreal Blender render (original design for the Virtual Pedalboard).
-Gloss black lacquer (deep clear coat, a few edge chips to bare aluminium, boot wear around the footswitch),
-metallic gold-leaf ink ("SLOW BURN" in Cinzel Decorative Bold, "12AX7 TUBE DRIVE", knob labels, a pinstripe
-frame), and a 12AX7 lying in a chrome-framed window in the lower half: clear glass with a silver getter flash,
-two grey plate assemblies, mica spacers and glowing heaters. Six knobs in two rows (Gain/Presence/Volume big,
-Bass/Middle/Treble small: black knurled skirts, gold satin caps, black pointers), a chrome bat-handle DEEP
-toggle left of the footswitch, the LED right of it. Uses pedal_render_common.py (same folder).
+Gloss black lacquer (clear coat, a few edge chips to bare aluminium, boot wear around the footswitch). Michael's
+candle-and-sun artwork (Assets/slowburn_art.png, black background already alpha) UV-printed on the left - its
+"SLOW BURN" lettering is the pedal's name. A 12AX7 stands upright in a chrome-framed window on the right: thin
+glass envelope, silvered getter dome at the top, bakelite base at the bottom, dark ribbed plates, mica spacers and
+glowing heaters. Cream labels, burnt-orange "12AX7 TUBE DRIVE" under the window. Six knobs in two rows
+(Gain/Presence/Volume big, Bass/Middle/Treble small: black knurled skirts, gloss black caps, cream pointers),
+a chrome bat-handle DEEP toggle left of the footswitch, the LED right of it. Uses pedal_render_common.py.
 
 Writes Assets/SlowBurn/: slowburn_face.png (heaters dim), slowburn_knob_strip.png (8-column grid),
 slowburn_switch_up/down.png, slowburn_led_on/off.png, slowburn_tube_on/off.png (the window, glow baked; the
@@ -27,7 +28,7 @@ sys.path.insert(0, HERE)
 ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
 OUT = os.path.join(ROOT, "Assets", "SlowBurn")
 TMP = os.path.join(HERE, "_frames_slowburn")
-FONT_NAME = os.path.join(ROOT, "Assets", "CinzelDecorative-Bold.ttf")
+ART_IMAGE = os.path.join(ROOT, "Assets", "slowburn_art.png")
 FONT_LABEL_CANDIDATES = [r"C:\Windows\Fonts\arialbd.ttf", r"C:\Windows\Fonts\segoeuib.ttf"]
 
 W, H = 91.0, 120.0
@@ -38,12 +39,12 @@ KNOB_PAD, SWITCH_PAD, LED_PAD = 1.30, 1.35, 2.6
 TUBE_PAD, TOGGLE_PAD = 1.10, 1.30                       # = SlowBurnFace::tubePad / togglePad
 
 # Albedos darker/more saturated than the target look (AgX lifts and desaturates)
-GLOSS_BLACK = (0.0045, 0.0045, 0.005, 1)
-GOLD = (0.78, 0.50, 0.17, 1)                           # gold leaf (metallic)
-KNOB_GOLD = (0.74, 0.50, 0.19, 1)
+GLOSS_BLACK = (0.002, 0.002, 0.0022, 1)       # quick render 1 (0.0045, spec 0.5, coat 1.0) read charcoal, sRGB ~78
+CREAM_INK = (0.86, 0.62, 0.30, 1)                      # target sRGB ~235,206,160 (the artwork's cream); AgX greys warm inks
+ORANGE_INK = (0.62, 0.055, 0.008, 1)                   # target ~208,66,23 (the artwork's burnt orange)
 STEEL_REFERENCE_TARGET = 0.74                          # same exposure basis as the other pedals
-HEATER_ON, HEATER_OFF = 38.0, 7.0                      # heater emission strength
-GLOW_COLOUR = (1.0, 0.50, 0.14)
+HEATER_ON, HEATER_OFF = 14.0, 3.0                      # heater emission strength (38 burned out to white)
+GLOW_COLOUR = (1.0, 0.36, 0.07)
 
 # ----------------------------------------------------------------------------- layout (= FaceLayout.h, 6 knobs + toggle)
 def fx(f): return -W / 2 + f * W
@@ -55,11 +56,10 @@ KNOB_LABELS = [["GAIN", "PRESENCE", "VOLUME"], ["BASS", "MIDDLE", "TREBLE"]]
 def knob_cy_frac(row): return KNOB_TOP[row] + ((KNOB_D_BIG, KNOB_D_SMALL)[row] / H) * 0.5
 def label_cy_frac(row):  # label rect: knob bottom + 1 px, 13 px tall
     return KNOB_TOP[row] + (KNOB_D_BIG, KNOB_D_SMALL)[row] / H + 7.5 / UI_BODY_PX_H
-NAME = (0.08, 0.432, 0.84, 0.092)
-WIN_C, WIN_WH = (0.5, 0.618), (W * 0.76, H * 0.175)    # the valve window ("emblem"), mm
-WIN_R = WIN_WH[1] * 0.22                               # bezel corner radius
-SUB_C, SUB_WH = (0.5, 0.737), (0.70, 0.038)
-PANEL = (0.06, 0.424, 0.88, 0.349)                     # = SlowBurnFace::panelRect
+ART_C, ART_WH = (0.31, 0.60), (W * 0.316, H * 0.36)    # printed artwork (2:3), mm
+WIN_C, WIN_WH = (0.72, 0.60), (W * 0.20, H * 0.34)    # the valve window (upright), mm
+WIN_R = min(WIN_WH) * 0.22                             # bezel corner radius
+SUB_C, SUB_WH = (0.72, 0.795), (0.40, 0.030)
 SW_D = W * 0.19
 SW_CY_FRAC = 0.895
 LED_D = 11.0 / UI_BODY_PX * W
@@ -88,17 +88,31 @@ def window_rect():
     return cx - WIN_WH[0] / 2, cy - WIN_WH[1] / 2, cx + WIN_WH[0] / 2, cy + WIN_WH[1] / 2
 
 # ----------------------------------------------------------------------------- materials (Blender only)
-def mat_gold_ink(name, ref_obj):
-    """Metallic gold-leaf print: satin metal with slight tone variation and a few tiny chips."""
+def mat_print(name, path, ref_obj):
+    """Full-colour UV print on the lacquer: the image's colour and alpha, satin ink a touch rougher than the coat."""
+    import bpy
     m, nt, p, g = C.new_material(name)
+    tex = nt.nodes.new("ShaderNodeTexImage")
+    tex.image = bpy.data.images.load(path)
+    tex.image.colorspace_settings.name = "sRGB"
+    tex.interpolation = "Cubic"
+    g.l(tex.outputs["Color"], C.inp(p, "Base Color"))
+    g.l(tex.outputs["Alpha"], C.inp(p, "Alpha"))
     co = C.body_coords(g, ref_obj)
-    var = g.noise(co, 1.0, detail=6)
-    col = g.mixc(g.math("MULTIPLY", g.ramp(var, [(0.3, 0.0), (0.7, 1.0)]), 0.25),
-                 tuple(x * 0.88 for x in GOLD[:3]) + (1.0,), tuple(min(1.0, x * 1.10) for x in GOLD[:3]) + (1.0,))
-    g.l(col, C.inp(p, "Base Color"))
-    C.set_in(p, "Metallic", 1.0)
-    g.l(g.ramp(var, [(0.3, 0.24), (0.7, 0.36)]), C.inp(p, "Roughness"))
+    g.l(g.ramp(g.noise(co, 1.2, detail=6), [(0.3, 0.42), (0.7, 0.55)]), C.inp(p, "Roughness"))
+    C.set_in(p, ["Specular IOR Level", "Specular"], 0.15)
+    C.set_in(p, ["Coat Weight", "Clearcoat"], 0.45)          # printed under the same clear coat as the paint
     return m
+
+def art_plane(mat):
+    import bmesh
+    bm = bmesh.new()
+    cx, cy, hw, hh = fx(ART_C[0]), fy(ART_C[1]), ART_WH[0] / 2, ART_WH[1] / 2
+    vs = [bm.verts.new(v) for v in ((cx - hw, cy - hh, 0), (cx + hw, cy - hh, 0), (cx + hw, cy + hh, 0), (cx - hw, cy + hh, 0))]
+    f = bm.faces.new(vs)
+    uv = bm.loops.layers.uv.new("UVMap")
+    for loop, t in zip(f.loops, ((0, 0), (1, 0), (1, 1), (0, 1))): loop[uv].uv = t
+    return C.mesh_obj("ArtPrint", bm, mat)
 
 def mat_glass(name):
     m, nt, p, g = C.new_material(name)
@@ -116,15 +130,15 @@ def mat_emit(name, colour, strength):
 
 # ----------------------------------------------------------------------------- the valve
 def valve(colls_on_off, mats, z_axis):
-    """A 12AX7 lying along x inside the window. Heaters go in the TubeOn / TubeOff collections."""
+    """A 12AX7 lying along +x (base at -x, getter dome at +x), centred on the origin; the caller parents it to a
+    pivot at the window centre turned 90 deg so it stands upright. Heaters go in the TubeOn / TubeOff collections."""
     import bpy, bmesh
-    x0, y0, x1, y1 = window_rect()
-    inset = WIN_WH[1] * 0.075
-    in_w, in_h = (x1 - x0) - 2 * inset, (y1 - y0) - 2 * inset
-    r = in_h * 0.33                                    # glass radius
+    long_, short = max(WIN_WH), min(WIN_WH)
+    inset = short * 0.075
+    in_w, in_h = long_ - 2 * inset, short - 2 * inset
+    r = in_h * 0.36                                    # glass radius
     L = in_w * 0.84                                    # glass length incl. dome
-    cx = (x0 + x1) / 2 + in_w * 0.02
-    cy = (y0 + y1) / 2
+    cx, cy = in_w * 0.02, 0.0
     gx0, gx1 = cx - L / 2, cx + L / 2 - r              # cylinder part; dome beyond gx1
     parts = []
 
@@ -148,7 +162,7 @@ def valve(colls_on_off, mats, z_axis):
     prof += [(gx1 + r * math.sin(a), r * math.cos(a)) for a in [math.radians(d) for d in range(0, 91, 6)]]
     parts.append(lathe("Glass", prof, mats["glass"], wall=0.3))
     gr = r - 0.34                                                       # silver getter flash inside the dome
-    gprof = [(gx1 + r * 0.25 + gr * math.sin(a) * 0.75, gr * math.cos(a)) for a in [math.radians(d) for d in range(30, 91, 6)]]
+    gprof = [(gx1 - r * 0.45, gr)] + [(gx1 + gr * math.sin(a), gr * math.cos(a)) for a in [math.radians(d) for d in range(0, 91, 6)]]
     parts.append(lathe("Getter", gprof, mats["getter"], wall=0.05))
     base = along_x(C.cylinder("Base", r * 1.05, in_w * 0.06, z0=-in_w * 0.03, verts=64, mat=mats["bakelite"]))
     base.location = (gx0 - in_w * 0.03, cy, z_axis); C.bevel(base, 0.4, 3); parts.append(base)
@@ -168,8 +182,12 @@ def valve(colls_on_off, mats, z_axis):
             o = C.box(f"Plate{k}{'ab'[sgn > 0]}", pw, ph, pz,
                       center=(x, cy + sgn * (gap / 2 + ph / 2), z_axis), mat=mats["plate"])
             C.bevel(o, 0.15, 2); parts.append(o)
+            for j in (1, 2):                                            # pressed ribs along each plate
+                rib = C.box(f"Rib{k}{'ab'[sgn > 0]}{j}", 0.45, ph * 0.92, pz + 0.35,
+                            center=(x - pw / 2 + pw * j / 3, cy + sgn * (gap / 2 + ph / 2), z_axis), mat=mats["plate"])
+                parts.append(rib)
         for key in colls_on_off:
-            h = along_x(C.cylinder(f"Heater{k}{key}", gap * 0.32, pw * 0.86, z0=-pw * 0.43, verts=16,
+            h = along_x(C.cylinder(f"Heater{k}{key}", gap * 0.40, pw * 0.86, z0=-pw * 0.43, verts=16,
                                    mat=mats["heater_" + key]))
             h.location = (x, cy, z_axis + pz * 0.15); heaters[key].append(h)
     return parts, heaters
@@ -187,7 +205,7 @@ def build(scene):
     sx, sy = fx(0.5), fy(SW_CY_FRAC)
     body = C.enclosure("Enclosure", W, H, 30.0, 3.5, None)
     paint = C.mat_powder_coat("GlossBlack", GLOSS_BLACK, body, scuff_center=(sx, sy),
-                              rough_base=0.30, spec=0.50, coat=1.0)    # deep clear coat over black
+                              rough_base=0.45, spec=0.12, coat=0.45)   # clear coat over black (1.0 + spec 0.5 = grey)
     body.data.materials.append(paint)
     face.objects.link(body)
     steel_ref = C.mat_brushed_steel(body, scuff_center=None)        # exposure reference only
@@ -195,16 +213,17 @@ def build(scene):
     chrome = C.mat_metal("Chrome", (0.92, 0.92, 0.94, 1), 0.07, smudges=0.05)
     satin = C.mat_metal("SatinMetal", (0.62, 0.63, 0.65, 1), 0.26, smudges=0.1)
     screw_metal = C.mat_metal("ScrewMetal", (0.74, 0.74, 0.76, 1), 0.25, smudges=0.06)
-    gold = mat_gold_ink("GoldInk", body)
+    cream = C.mat_ink("InkCream", CREAM_INK, body, chip_amount=0.35)
+    orange = C.mat_ink("InkOrange", ORANGE_INK, body, chip_amount=0.35)
     knob_skirt = C.mat_plastic("KnobSkirt", (0.008, 0.008, 0.009, 1), rough=0.45, spec=0.3, smudges=0.06)
-    knob_cap = C.mat_metal("KnobCapGold", KNOB_GOLD, 0.30, smudges=0.06)
-    pointer = C.mat_simple("PointerBlack", (0.008, 0.008, 0.008, 1), rough=0.4)
-    recess = C.mat_simple("Recess", (0.012, 0.010, 0.009, 1), rough=0.8, spec=0.2)
+    knob_cap = C.mat_plastic("KnobCapGloss", (0.006, 0.006, 0.007, 1), rough=0.18, spec=0.45, coat=0.6, smudges=0.05)
+    pointer = C.mat_simple("PointerCream", CREAM_INK, rough=0.45)
+    recess = C.mat_simple("Recess", (0.022, 0.017, 0.012, 1), rough=0.8, spec=0.2)
     vmats = dict(glass=mat_glass("Glass"), getter=C.mat_metal("Getter", (0.80, 0.80, 0.82, 1), 0.04, smudges=0.0),
                  bakelite=C.mat_plastic("Bakelite", (0.02, 0.012, 0.008, 1), rough=0.35, spec=0.4, smudges=0.0),
                  mica=C.mat_simple("Mica", (0.55, 0.50, 0.42, 1), rough=0.6),
                  rod=C.mat_metal("Rod", (0.6, 0.6, 0.62, 1), 0.3, smudges=0.0),
-                 plate=C.mat_metal("Plate", (0.22, 0.21, 0.20, 1), 0.55, smudges=0.0),
+                 plate=C.mat_metal("Plate", (0.07, 0.068, 0.066, 1), 0.48, smudges=0.0),
                  heater_TubeOn=mat_emit("HeaterOn", GLOW_COLOUR, HEATER_ON),
                  heater_TubeOff=mat_emit("HeaterOff", GLOW_COLOUR, HEATER_OFF))
 
@@ -215,7 +234,7 @@ def build(scene):
 
     # window: hole through the lid, dark recess, chrome bezel
     x0, y0, x1, y1 = window_rect()
-    win_in = WIN_WH[1] * 0.075
+    win_in = min(WIN_WH) * 0.075
     depth = 14.0
     hole = C.flat_shape("WindowHole", rounded_rect_pts(x0 + win_in, y0 + win_in, x1 - win_in, y1 - win_in, WIN_R * 0.7),
                         None, thickness=depth + 2.0)
@@ -236,27 +255,25 @@ def build(scene):
     C.bevel(bezel, 0.45, 3, 40); C.smooth(bezel)
     face.objects.link(bezel)
     parts, heaters = valve(("TubeOn", "TubeOff"), vmats, z_axis=-depth * 0.48)
-    for o in parts: face.objects.link(o)
+    vpiv = bpy.data.objects.new("ValvePivot", None); face.objects.link(vpiv)
+    vpiv.location = ((x0 + x1) / 2, (y0 + y1) / 2, 0.0)
+    vpiv.rotation_euler = (0, 0, math.radians(90))                     # +x (getter dome) points up
+    for o in parts: face.objects.link(o); o.parent = vpiv
     for key, hs in heaters.items():
-        for o in hs: colls[key].objects.link(o)
+        for o in hs: colls[key].objects.link(o); o.parent = vpiv
 
-    # printing
-    name_font = bpy.data.fonts.load(FONT_NAME) if os.path.exists(FONT_NAME) else None
+    # printing: the artwork (UV print), cream labels, orange subtitle
     label_font = next((bpy.data.fonts.load(p) for p in FONT_LABEL_CANDIDATES if os.path.exists(p)), None)
-    ncx, ncy = rect_center(NAME)
-    C.text_obj("Name", "SLOW BURN", name_font, gold, (ncx, ncy, NAME[2] * W * 0.92, NAME[3] * H * 0.80), face,
-               z=0.0, thickness=0.05)
-    C.text_obj("Sub", "12AX7 TUBE DRIVE", label_font, gold,
-               (fx(SUB_C[0]), fy(SUB_C[1]), SUB_WH[0] * W * 0.80, SUB_WH[1] * H * 0.70), face, spacing=1.3)
-    C.text_obj("DeepLabel", "DEEP", label_font, gold,
+    if os.path.exists(ART_IMAGE):
+        o = art_plane(mat_print("ArtPrint", ART_IMAGE, body)); o.location = (0, 0, 0.005); face.objects.link(o)
+    C.text_obj("Sub", "12AX7 TUBE DRIVE", label_font, orange,
+               (fx(SUB_C[0]), fy(SUB_C[1]), SUB_WH[0] * W * 0.86, SUB_WH[1] * H * 0.75), face, spacing=1.2)
+    C.text_obj("DeepLabel", "DEEP", label_font, cream,
                (fx(TOG_LABEL_C[0]), fy(TOG_LABEL_C[1]), TOG_LABEL_WH[0] * W * 0.6, TOG_LABEL_WH[1] * H * 0.75), face, spacing=1.2)
     for row in range(2):
         for i, (label, cxf) in enumerate(zip(KNOB_LABELS[row], KNOB_CX)):
-            C.text_obj(f"Label{row}{i}", label, label_font, gold,
+            C.text_obj(f"Label{row}{i}", label, label_font, cream,
                        (fx(cxf), fy(label_cy_frac(row)), W * 0.24, 13.0 / UI_BODY_PX_H * H * 0.75), face, spacing=1.05)
-    px0, py1 = fx(PANEL[0]), fy(PANEL[1]); px1, py0 = fx(PANEL[0] + PANEL[2]), fy(PANEL[1] + PANEL[3])
-    stripe = C.flat_shape("Pinstripe", rounded_ring(px0, py0, px1, py1, W * 0.035, 1.2 * MM_PER_PX), gold, thickness=0.04)
-    face.objects.link(stripe)
 
     # LED
     lx, ly = fx(LED_CX_FRAC), fy(LED_CY_FRAC)
@@ -318,11 +335,11 @@ def window_mask(a):
     a[..., 3] *= np.clip(0.5 - d * ppmm, 0.0, 1.0)
     return a
 
-def heater_glow(a, strength=0.9):
+def heater_glow(a, strength=1.5):
     """Warm bloom around the glowing heaters, inside the window only."""
     import numpy as np
     hot = np.clip((a[..., 0] - a[..., 2]) - 0.35, 0, None) * a[..., 3]
-    glow = np.clip(C._blur(hot, a.shape[1] * 0.025) * strength * 3.0, 0, 0.85)
+    glow = np.clip(C._blur(hot, max(a.shape[:2]) * 0.035) * strength * 3.0, 0, 0.85)
     for i, c in enumerate(GLOW_COLOUR):
         a[..., i] = a[..., i] * (1 - glow) + c * glow
     return a
