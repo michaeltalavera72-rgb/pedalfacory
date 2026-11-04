@@ -37,4 +37,12 @@ public:
     // Optional mini toggle switch on the face (e.g. a voicing switch). Bool parameter, true = up/ON.
     // Not a footswitch: it never bypasses the pedal.
     juce::String toggleId, toggleLabel;
+
+    // Optional "effects loop" return stage (e.g. a keyed noise gate). When hasReturnStage() is true the board
+    // calls process() at the pedal's slot, then processReturn() on the same block after the later pedals:
+    // just before the first time-based pedal, or at the end of the chain.
+    virtual bool hasReturnStage() const { return false; }
+    virtual void processReturn(juce::AudioBuffer<float>&) {}
+    // Delay/reverb-type pedals return true so a keyed gate's return lands before them (tails ring out).
+    virtual bool isTimeBased() const { return false; }
 };

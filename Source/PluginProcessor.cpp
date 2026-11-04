@@ -11,6 +11,7 @@ PedalboardProcessor::makeLayout(std::vector<std::unique_ptr<PedalBase>>& pedals)
     pedals.push_back(std::make_unique<ValveHowler>());
     pedals.push_back(std::make_unique<FeralHound>());
     pedals.push_back(std::make_unique<SlowBurn>());
+    pedals.push_back(std::make_unique<Gatekeeper>());
     pedals.push_back(std::make_unique<Overdrive>());
     pedals.push_back(std::make_unique<Distortion>());
     pedals.push_back(std::make_unique<Fuzz>());
@@ -93,8 +94,18 @@ void PedalboardProcessor::processBlock(juce::AudioBuffer<float>& buf, juce::Midi
         if (l.isLocked()) { n = chainSize; for (int i = 0; i < n; ++i) local[i] = chain[i]; }
         // if the board is being edited right now, this block passes through dry
     }
+    // Pedals with a return stage (keyed gate) listen at their slot and apply their gain later:
+    // before the first time-based pedal, or after the last pedal.
+    PedalBase* pending[maxSlots]; int np = 0;
+    auto flushReturns = [&] { for (int k = 0; k < np; ++k) pending[k]->processReturn(mono); np = 0; };
     for (int i = 0; i < n; ++i)
-        if (local[i]->isActive()) local[i]->process(mono);
+        if (local[i]->isActive())
+        {
+            if (local[i]->isTimeBased()) flushReturns();
+            local[i]->process(mono);
+            if (local[i]->hasReturnStage()) pending[np++] = local[i];
+        }
+    flushReturns();
 
     // OUTPUT level (smoothed) + output meter
     outGain.setTargetValue(juce::Decibels::decibelsToGain(outGainDb->load()));

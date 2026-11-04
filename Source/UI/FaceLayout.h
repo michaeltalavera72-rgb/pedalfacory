@@ -8,6 +8,8 @@ struct FaceLayout
     // Pedal body proportions (226 x 372 px since v28; was 226 x 298). Blender faces are rendered at this shape;
     // a face image with a different shape is ignored (the vector face is shown) until it is re-rendered.
     static constexpr float bodyAspect = 372.0f / 226.0f;
+    // Gatekeeper's printed artwork is inset 2.6 mm on the 91 mm-wide body.
+    static constexpr float artInset = 2.6f / 91.0f;
 
     juce::Rectangle<float> body;               // the whole enclosure
     juce::Array<juce::Rectangle<float>> knobs; // one square per knob, left to right
@@ -81,6 +83,27 @@ struct FaceLayout
             f.hasToggle = true;
             f.toggle      = juce::Rectangle<float>(W * 0.10f, W * 0.16f).withCentre({ x0 + W * 0.20f, y0 + H * 0.905f });
             f.toggleLabel = juce::Rectangle<float>(W * 0.24f, H * 0.032f).withCentre({ x0 + W * 0.20f, y0 + H * 0.812f });
+        }
+        if (numKnobs == 2 && withToggle)
+        {
+            // Gatekeeper: Michael's full-face artwork, printed 2.6 mm (artInset of W) inside the enclosure edge.
+            // Every control sits exactly over the one painted in the art (= render_gatekeeper.py / make_gatekeeper_art.py).
+            f.knobs.clear(); f.labels.clear();
+            const float dk = W * 0.235f;
+            for (float cxf : { 0.1787f, 0.8246f })
+            {
+                const auto k = juce::Rectangle<float>(dk, dk).withCentre({ x0 + W * cxf, y0 + H * 0.1223f });
+                f.knobs.add(k);
+                f.labels.add({ k.getX(), k.getBottom(), dk, 13.0f });      // printed in the art; unused
+            }
+            f.emblem   = body.reduced(W * artInset);
+            f.name     = f.emblem;                                         // the artwork carries name + labels
+            f.subtitle = {};
+            f.led      = juce::Rectangle<float>(11.0f, 11.0f).withCentre({ x0 + W * 0.50f, y0 + H * 0.7217f });
+            f.footswitch = juce::Rectangle<float>(sw, sw).withCentre({ x0 + W * 0.50f, y0 + H * 0.8148f });
+            f.hasToggle = true;
+            f.toggle      = juce::Rectangle<float>(W * 0.10f, W * 0.16f).withCentre({ x0 + W * 0.23f, y0 + H * 0.8148f });
+            f.toggleLabel = juce::Rectangle<float>(W * 0.20f, H * 0.03f).withCentre({ x0 + W * 0.23f, y0 + H * 0.752f });
         }
         if (numSwitches >= 2)
         {

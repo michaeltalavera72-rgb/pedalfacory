@@ -6,6 +6,7 @@
 #include "Pedals/ValveHowler.h"
 #include "Pedals/FeralHound.h"
 #include "Pedals/SlowBurn.h"
+#include "Pedals/Gatekeeper.h"
 
 class PedalboardProcessor : public juce::AudioProcessor, public juce::ChangeBroadcaster
 {

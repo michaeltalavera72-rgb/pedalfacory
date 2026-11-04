@@ -817,6 +817,56 @@ private:
 };
 
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Gatekeeper (noise gate, based on the Boss NF-1): Michael's full-face artwork (Assets/gatekeeper_art.png:
+// the enthroned gatekeeper, the iron gate, two hounds, "GATEKEEPER / NOISE GATE", THRESHOLD / RELEASE,
+// HARD / SOFT) printed edge to edge on a worn black enclosure. Knobs, LED, footswitch and the HARD/SOFT
+// toggle sit exactly over the ones painted in the art (FaceLayout: 2 knobs + toggle).
+class GatekeeperFace : public RenderedFace
+{
+public:
+    static constexpr float togglePad = 1.30f;    // = render_gatekeeper.py
+
+    GatekeeperFace() : RenderedFace("gatekeeper")
+    {
+        art = juce::ImageCache::getFromMemory(BinaryData::gatekeeper_art_png, BinaryData::gatekeeper_art_pngSize);
+        toggleUp = loadImage("gatekeeper_toggle_up_png"); toggleDn = loadImage("gatekeeper_toggle_down_png");
+    }
+    bool drawsLabels() const override { return true; }                 // all lettering is in the artwork
+    juce::Colour labelColour() const override { return juce::Colour(0xffcecbc6); }
+    juce::Rectangle<float> toggleBounds(juce::Rectangle<float> r) const override
+    {
+        return rendered() && toggleUp.isValid() ? r.withSizeKeepingCentre(r.getWidth() * togglePad, r.getHeight() * togglePad) : r;
+    }
+    const juce::Image* toggleImage(bool up) const override
+    {
+        if (! rendered()) return nullptr;
+        auto& img = up ? toggleUp : toggleDn;
+        return img.isValid() ? &img : nullptr;
+    }
+
+protected:
+    void paintVector(juce::Graphics& g, const FaceLayout& f, bool active) override
+    {
+        using namespace juce;
+        const auto b = f.body;
+        g.setColour(Colours::black.withAlpha(0.45f));
+        g.fillRoundedRectangle(b.translated(0, 3), 9.0f);
+        g.setGradientFill(ColourGradient(Colour(0xff2a2a2c), b.getX(), b.getY(), Colour(0xff0b0b0c), b.getRight(), b.getBottom(), false));
+        g.fillRoundedRectangle(b, 9.0f);
+        if (art.isValid())
+        {
+            g.setImageResamplingQuality(Graphics::highResamplingQuality);
+            g.setOpacity(1.0f);
+            g.drawImage(art, f.emblem);
+        }
+        drawLed(g, f.led, active);
+    }
+
+private:
+    juce::Image art, toggleUp, toggleDn;
+};
+
 std::unique_ptr<PedalFace> createFaceFor(const juce::String& pedalId)
 {
     if (pedalId == "bm") return std::make_unique<RamhornFace>();
@@ -825,5 +875,6 @@ std::unique_ptr<PedalFace> createFaceFor(const juce::String& pedalId)
     if (pedalId == "ts") return std::make_unique<ValveHowlerFace>();
     if (pedalId == "ad") return std::make_unique<FeralHoundFace>();
     if (pedalId == "sb") return std::make_unique<SlowBurnFace>();
+    if (pedalId == "ng") return std::make_unique<GatekeeperFace>();
     return nullptr;
 }
