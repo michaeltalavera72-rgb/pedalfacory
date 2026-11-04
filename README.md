@@ -31,6 +31,18 @@ use; to sell or give away a closed-source build, sign Steinberg's free ASIO lice
 ## Using it
 Drag a pedal by its title bar to reorder; X removes; "+ Add pedal" adds.
 
+## Global section: Semitone Transposer (below the board)
+Shifts the guitar up/down in whole semitones (-12..+12) to play in other tunings without retuning.
+It sits first in the chain (right after INPUT level), so the drive pedals hear the re-tuned guitar.
+Footswitch + LED = on/off (15 ms crossfade), TRANSPOSE (double-click = 0), MIX (100 % = shifted only),
+LEVEL (-24..+12 dB), and a LIVE / STUDIO toggle:
+- LIVE (default): low-latency splice shifter (Source/Global/Transposer.h, SpliceShifter). Pick attacks
+  come through ~3 ms after they're played; sustained notes run ~7 ms behind, chords ~13 ms. 0 st = no delay.
+- STUDIO: Signalsmith Stretch phase-vocoder shifter. Smoother on octave-up chords, ~85 ms delay
+  (reported to the DAW for compensation). Not for playing live.
+Parameters: gx_transpose, gx_mix, gx_level, gx_on, gx_studio (saved with the session).
+Test programs: Tools/Analysis/Transposer/ (pitch accuracy, chords, attacks, clicks, latency).
+
 ## Adding a pedal
 Subclass DriveBase (or PedalBase) and register it in PedalboardProcessor::makeLayout.
 A second footswitch (e.g. boost): override secondarySwitchId()/secondarySwitchLabel(), bind
@@ -66,6 +78,10 @@ createFaceFor() for the pedal's id. Without a face the pedal gets the plain gene
   (Tools/Analysis/slo_reference_response.py). Gloss-black face with Michael's candle-and-sun artwork (Assets/slowburn_art.png) and the valve standing
   upright in a window.
 - Overdrive, Distortion, Fuzz: generic placeholders.
+
+## Third-party code
+- Signalsmith Stretch 1.4.0 and Signalsmith Linear 0.6.4 (MIT license), fetched by CMake. Used by the
+  Transposer's STUDIO mode. https://github.com/Signalsmith-Audio/signalsmith-stretch
 
 ## Third-party assets
 - Assets/AlfaSlabOne-Regular.ttf: Alfa Slab One by JM Solé, SIL Open Font License 1.1

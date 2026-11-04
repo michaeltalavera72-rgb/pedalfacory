@@ -7,8 +7,9 @@
 #include "Pedals/FeralHound.h"
 #include "Pedals/SlowBurn.h"
 #include "Pedals/Gatekeeper.h"
+#include "Global/Transposer.h"
 
-class PedalboardProcessor : public juce::AudioProcessor, public juce::ChangeBroadcaster
+class PedalboardProcessor : public juce::AudioProcessor, public juce::ChangeBroadcaster, private juce::Timer
 {
 public:
     PedalboardProcessor();
@@ -43,7 +44,18 @@ public:
     std::atomic<float> inPeak { 0.0f }, outPeak { 0.0f };
     static float takePeak(std::atomic<float>& p) { return p.exchange(0.0f); }
 
+    // ---- Global section (below the board) ----
+    // Semitone Transposer: first in the chain, right after INPUT level. Parameters "gx_transpose" (int st),
+    // "gx_mix" (%), "gx_level" (dB), "gx_on" (true = on), "gx_studio" (false = LIVE, true = STUDIO).
+    int studioLatencySamples() const { return studioLatency.load(); }
+
 private:
+    void timerCallback() override;                        // message thread: keeps the reported latency current
+    transposer::Transposer transposer;
+    std::atomic<float> *gxTranspose = nullptr, *gxMix = nullptr, *gxLevel = nullptr, *gxOn = nullptr, *gxStudio = nullptr;
+    std::atomic<int> studioLatency { 0 };
+    int wantedLatency() const { return (gxOn->load() >= 0.5f && gxStudio->load() >= 0.5f) ? studioLatency.load() : 0; }
+
     std::atomic<float> *inGainDb = nullptr, *outGainDb = nullptr;
     juce::SmoothedValue<float, juce::ValueSmoothingTypes::Multiplicative> inGain { 1.0f }, outGain { 1.0f };
     static void raisePeak(std::atomic<float>& p, float v)

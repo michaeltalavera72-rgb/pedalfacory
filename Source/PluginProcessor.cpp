@@ -24,6 +24,20 @@ PedalboardProcessor::makeLayout(std::vector<std::unique_ptr<PedalBase>>& pedals)
     layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{"board_out",1}, "Output Level",
         juce::NormalisableRange<float>(-60.0f, 12.0f, 0.1f, 2.5f), 0.0f,          // skewed: fine control near 0 dB
         juce::AudioParameterFloatAttributes().withLabel("dB").withStringFromValueFunction(db)));
+    // Global: Semitone Transposer (whole semitones only: AudioParameterInt)
+    layout.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{"gx_transpose",1}, "Transpose", -12, 12, 0,
+        juce::AudioParameterIntAttributes().withLabel("st")
+            .withStringFromValueFunction([](int v, int) { return (v > 0 ? "+" : "") + juce::String(v) + " st"; })
+            .withValueFromStringFunction([](const juce::String& t) { return t.retainCharacters("+-0123456789").getIntValue(); })));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{"gx_mix",1}, "Mix",
+        juce::NormalisableRange<float>(0.0f, 100.0f, 1.0f), 100.0f,
+        juce::AudioParameterFloatAttributes().withLabel("%").withStringFromValueFunction([](float v, int) { return juce::String(juce::roundToInt(v)) + " %"; })));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{"gx_level",1}, "Transpose Level",
+        juce::NormalisableRange<float>(-24.0f, 12.0f, 0.1f), 0.0f,
+        juce::AudioParameterFloatAttributes().withLabel("dB").withStringFromValueFunction(db)));
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{"gx_on",1}, "Transpose On", false));
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{"gx_studio",1}, "Transpose Studio Mode", false,
+        juce::AudioParameterBoolAttributes().withStringFromValueFunction([](bool b, int) { return juce::String(b ? "Studio" : "Live"); })));
     for (auto& p : pedals) p->addParameters(layout);
     return layout;
 }
@@ -37,7 +51,20 @@ PedalboardProcessor::PedalboardProcessor()
     for (auto& p : pedals) p->bindParameters(apvts);
     inGainDb = apvts.getRawParameterValue("board_in");
     outGainDb = apvts.getRawParameterValue("board_out");
+    gxTranspose = apvts.getRawParameterValue("gx_transpose");
+    gxMix = apvts.getRawParameterValue("gx_mix");
+    gxLevel = apvts.getRawParameterValue("gx_level");
+    gxOn = apvts.getRawParameterValue("gx_on");
+    gxStudio = apvts.getRawParameterValue("gx_studio");
     setBoard(juce::StringArray(board));   // copy: setBoard clears board while reading ids
+    startTimerHz(10);
+}
+
+void PedalboardProcessor::timerCallback()
+{
+    // STUDIO mode adds a fixed delay: tell the host so it can line recorded tracks up.
+    // (LIVE reports 0: its few ms vary note to note, and it's meant for playing.)
+    if (const int l = wantedLatency(); l != getLatencySamples()) setLatencySamples(l);
 }
 
 PedalBase* PedalboardProcessor::findPedal(const juce::String& id) const
@@ -70,6 +97,15 @@ void PedalboardProcessor::prepareToPlay(double sr, int bs)
     for (auto& p : pedals) { p->prepare(spec); p->reset(); }
     inGain.reset(sr, 0.05);  inGain.setCurrentAndTargetValue(juce::Decibels::decibelsToGain(inGainDb->load()));
     outGain.reset(sr, 0.05); outGain.setCurrentAndTargetValue(juce::Decibels::decibelsToGain(outGainDb->load()));
+    // Transposer: load the current settings first so it starts in the right state (no fade-in on load)
+    transposer.setSemitones(juce::roundToInt(gxTranspose->load()));
+    transposer.setMix(gxMix->load() * 0.01f);
+    transposer.setLevelDb(gxLevel->load());
+    transposer.setOn(gxOn->load() >= 0.5f);
+    transposer.setMode(gxStudio->load() >= 0.5f ? transposer::Transposer::Mode::studio : transposer::Transposer::Mode::live);
+    transposer.prepare(sr, bs);
+    studioLatency.store(transposer.studioLatencySamples());
+    setLatencySamples(wantedLatency());
 }
 
 void PedalboardProcessor::processBlock(juce::AudioBuffer<float>& buf, juce::MidiBuffer&)
@@ -87,6 +123,15 @@ void PedalboardProcessor::processBlock(juce::AudioBuffer<float>& buf, juce::Midi
     inGain.setTargetValue(juce::Decibels::decibelsToGain(inGainDb->load()));
     inGain.applyGain(mono, numSamples);
     raisePeak(inPeak, mono.getMagnitude(0, 0, numSamples));
+
+    // Global: Semitone Transposer, first in the chain (clean guitar shifts cleanest; drives react
+    // to the new notes like a re-tuned guitar). Always runs, so switching it on is instant and click-free.
+    transposer.setSemitones(juce::roundToInt(gxTranspose->load()));
+    transposer.setMix(gxMix->load() * 0.01f);
+    transposer.setLevelDb(gxLevel->load());
+    transposer.setOn(gxOn->load() >= 0.5f);
+    transposer.setMode(gxStudio->load() >= 0.5f ? transposer::Transposer::Mode::studio : transposer::Transposer::Mode::live);
+    transposer.process(mono.getWritePointer(0), numSamples);
 
     PedalBase* local[maxSlots]; int n = 0;
     {

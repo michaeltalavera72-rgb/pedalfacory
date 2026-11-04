@@ -4,6 +4,10 @@ set(CMAKE_CXX_STANDARD 17)
 include(FetchContent)
 FetchContent_Declare(JUCE GIT_REPOSITORY https://github.com/juce-framework/JUCE.git GIT_TAG 8.0.15 GIT_SHALLOW TRUE)   # 8.0.15: newest JUCE 8, works with VS 2026
 FetchContent_MakeAvailable(JUCE)
+# Signalsmith Stretch (MIT): polyphonic pitch shifter used by the Transposer's STUDIO mode.
+# It fetches its own dependency, Signalsmith Linear (MIT).
+FetchContent_Declare(signalsmith-stretch GIT_REPOSITORY https://github.com/Signalsmith-Audio/signalsmith-stretch.git GIT_TAG 1.4.0 GIT_SHALLOW TRUE SYSTEM)   # SYSTEM: no warnings from its headers
+FetchContent_MakeAvailable(signalsmith-stretch)
 
 juce_add_plugin(VirtualPedalboard
     COMPANY_NAME "YourCompany"
@@ -22,9 +26,12 @@ target_sources(VirtualPedalboard PRIVATE
 file(GLOB PEDAL_RENDERS CONFIGURE_DEPENDS Assets/Ramhorn/*.png Assets/Buzzsaw/*.png Assets/RailBender/*.png Assets/ValveHowler/*.png Assets/FeralHound/*.png Assets/SlowBurn/*.png Assets/Gatekeeper/*.png)
 juce_add_binary_data(PedalboardAssets SOURCES Assets/AlfaSlabOne-Regular.ttf Assets/MetalMania-Regular.ttf Assets/Rye-Regular.ttf Assets/Poppins-BoldItalic.ttf Assets/BlackOpsOne-Regular.ttf Assets/feralhound_dog.png Assets/slowburn_art.png Assets/gatekeeper_art.png ${PEDAL_RENDERS})
 target_include_directories(VirtualPedalboard PRIVATE Source)
+if(MSVC)
+    target_compile_options(VirtualPedalboard PRIVATE /bigobj)   # Signalsmith's FFT templates need it
+endif()
 target_compile_definitions(VirtualPedalboard PUBLIC
     JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0 JUCE_VST3_CAN_REPLACE_VST2=0
     JUCE_ASIO=1)   # ASIO drivers in the Standalone (Windows only). Uses the ASIO SDK bundled with JUCE (GPLv3 / Steinberg license)
 target_link_libraries(VirtualPedalboard PRIVATE
-    PedalboardAssets juce::juce_audio_utils juce::juce_dsp
+    PedalboardAssets signalsmith-stretch juce::juce_audio_utils juce::juce_dsp
     juce::juce_recommended_config_flags juce::juce_recommended_warning_flags)

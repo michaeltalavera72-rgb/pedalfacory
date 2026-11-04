@@ -3,6 +3,7 @@
 #include "Faces/PedalFace.h"
 #include "UI/StompboxControls.h"
 #include "UI/LevelControl.h"
+#include "UI/TransposerPanel.h"
 
 class BoardComponent;
 
@@ -83,5 +84,7 @@ private:
     juce::TextButton addButton { "+ Add pedal" };
     juce::TooltipWindow tooltips { this, 500 };   // shows every setTooltip()/getTooltip() in the editor
     LevelControl inputLevel, outputLevel;     // signal flow: INPUT on the left, OUTPUT on the right
-    static constexpr int topBarH = 44, minWidth = 640;
+    TransposerPanel transposerPanel;          // global section below the board
+    static constexpr int topBarH = 44, minWidth = 680, globalH = TransposerPanel::panelH + 8;
+    static constexpr int editorH = BoardComponent::boardH + topBarH + 14 + globalH;
 };

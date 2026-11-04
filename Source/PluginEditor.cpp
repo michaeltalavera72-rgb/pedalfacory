@@ -241,8 +241,10 @@ void BoardComponent::removePedal(PedalBase& p)
 PedalboardEditor::PedalboardEditor(PedalboardProcessor& p)
     : AudioProcessorEditor(p), proc(p), board(p),
       inputLevel("INPUT", p.apvts, "board_in", [&p] { return PedalboardProcessor::takePeak(p.inPeak); }),
-      outputLevel("OUTPUT", p.apvts, "board_out", [&p] { return PedalboardProcessor::takePeak(p.outPeak); })
+      outputLevel("OUTPUT", p.apvts, "board_out", [&p] { return PedalboardProcessor::takePeak(p.outPeak); }),
+      transposerPanel(p.apvts, [&p] { return p.studioLatencySamples(); })
 {
+    addAndMakeVisible(transposerPanel);
     addAndMakeVisible(inputLevel); addAndMakeVisible(outputLevel);
     viewport.setViewedComponent(&board, false);
     board.setViewport(&viewport);
@@ -259,11 +261,11 @@ PedalboardEditor::PedalboardEditor(PedalboardProcessor& p)
         });
     };
     proc.addChangeListener(this);
-    setResizable(true, true); setResizeLimits(minWidth, BoardComponent::boardH + topBarH + 14, 2400, BoardComponent::boardH + topBarH + 14);
+    setResizable(true, true); setResizeLimits(minWidth, editorH, 2400, editorH);
     updateSize();
 }
 PedalboardEditor::~PedalboardEditor() { proc.removeChangeListener(this); }
-void PedalboardEditor::updateSize() { setSize(juce::jlimit(minWidth, 1400, board.getWidth() + 8), BoardComponent::boardH + topBarH + 14); }
+void PedalboardEditor::updateSize() { setSize(juce::jlimit(minWidth, 1400, board.getWidth() + 8), editorH); }
 void PedalboardEditor::paint(juce::Graphics& g)
 {
     g.fillAll(juce::Colour(0xff1a1a1a));
@@ -277,5 +279,6 @@ void PedalboardEditor::resized()
     inputLevel.setBounds(bar.removeFromLeft(240));
     outputLevel.setBounds(bar.removeFromRight(240));
     addButton.setBounds(bar.withSizeKeepingCentre(130, 28));
+    transposerPanel.setBounds(r.removeFromBottom(globalH).withTrimmedBottom(6));
     viewport.setBounds(r);
 }
