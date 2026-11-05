@@ -67,7 +67,7 @@ private:
 };
 
 struct Overdrive  : DriveBase { juce::String getId() const override { return "od"; } juce::String getName() const override { return "Overdrive"; }
-    PedalCategory getCategory() const override { return PedalCategory::Distortion; }
+    PedalCategory getCategory() const override { return PedalCategory::Overdrive; }
     juce::String getBasedOn() const override { return "Generic placeholder - not based on a specific pedal yet"; }
     float shape(float x) const override { return std::tanh(x); } };
 struct Distortion : DriveBase { juce::String getId() const override { return "ds"; } juce::String getName() const override { return "Distortion"; }

@@ -20,7 +20,7 @@ class ValveHowler : public PedalBase
 public:
     juce::String getId() const override { return "ts"; }
     juce::String getName() const override { return "Valve Howler"; }
-    PedalCategory getCategory() const override { return PedalCategory::Distortion; }
+    PedalCategory getCategory() const override { return PedalCategory::Overdrive; }
     juce::String getBasedOn() const override { return "Ibanez TS-808 Tube Screamer (late 1970s, JRC4558 op-amp)"; }
 
     // Tooltip text for each control (the editor adds the control's name on top).

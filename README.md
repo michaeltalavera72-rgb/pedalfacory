@@ -29,7 +29,7 @@ Licensing: the bundled ASIO SDK is GPLv3 (or Steinberg's own license). Fine for 
 use; to sell or give away a closed-source build, sign Steinberg's free ASIO license.
 
 ## Using it
-Drag a pedal by its title bar to reorder; X removes; "+ Add pedal" adds (pedals are grouped into Tools / Fuzz / Distortion submenus).
+Drag a pedal by its title bar to reorder; X removes; "+ Add pedal" adds (pedals are grouped into Tools / Overdrive / Fuzz / Distortion submenus).
 
 ## Global section: Semitone Transposer (below the board)
 Shifts the guitar up/down in whole semitones (-12..+12) to play in other tunings without retuning.
@@ -44,7 +44,7 @@ Parameters: gx_transpose, gx_mix, gx_level, gx_on, gx_studio (saved with the ses
 Test programs: Tools/Analysis/Transposer/ (pitch accuracy, chords, attacks, clicks, latency).
 
 ## Adding a pedal
-Subclass DriveBase (or PedalBase), return its category from getCategory() (the "+ Add pedal" submenu: Tools, Fuzz, Distortion), and register it in PedalboardProcessor::makeLayout. New categories go in the PedalCategory enum in PedalBase.h.
+Subclass DriveBase (or PedalBase), return its category from getCategory() (the "+ Add pedal" submenu: Tools, Overdrive, Fuzz, Distortion), and register it in PedalboardProcessor::makeLayout. New categories go in the PedalCategory enum in PedalBase.h.
 A second footswitch (e.g. boost): override secondarySwitchId()/secondarySwitchLabel(), bind
 secondaryParam, and handle primaryOn()/secondaryOn() in process(); the face gets two switches + LEDs.
 A mini toggle switch (e.g. a voicing switch, never a bypass): set toggleId (a bool parameter, true = up)

@@ -6,19 +6,20 @@
 // Top-level groups in the "+ Add pedal" menu, in the order they appear there.
 // To add a category: add it to the enum, give it a name in categoryName() and list it in allCategories.
 // Categories with no pedals are left out of the menu.
-enum class PedalCategory { Tools, Fuzz, Distortion };
+enum class PedalCategory { Tools, Overdrive, Fuzz, Distortion };
 
 inline juce::String categoryName(PedalCategory c)
 {
     switch (c)
     {
         case PedalCategory::Tools:      return "Tools";
+        case PedalCategory::Overdrive:  return "Overdrive";
         case PedalCategory::Fuzz:       return "Fuzz";
         case PedalCategory::Distortion: return "Distortion";
     }
     return "Other";
 }
-inline constexpr PedalCategory allCategories[] = { PedalCategory::Tools, PedalCategory::Fuzz, PedalCategory::Distortion };
+inline constexpr PedalCategory allCategories[] = { PedalCategory::Tools, PedalCategory::Overdrive, PedalCategory::Fuzz, PedalCategory::Distortion };
 
 // Every pedal implements this interface. The board owns pedals in a vector
 // and runs them in order (guitar -> pedal 1 -> pedal 2 -> ... -> output).
