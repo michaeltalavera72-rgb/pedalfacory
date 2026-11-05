@@ -4,6 +4,7 @@
 #include "UI/StompboxControls.h"
 #include "UI/LevelControl.h"
 #include "UI/TransposerPanel.h"
+#include "UI/PresetBar.h"
 
 class BoardComponent;
 
@@ -85,6 +86,7 @@ private:
     juce::TooltipWindow tooltips { this, 500 };   // shows every setTooltip()/getTooltip() in the editor
     LevelControl inputLevel, outputLevel;     // signal flow: INPUT on the left, OUTPUT on the right
     TransposerPanel transposerPanel;          // global section below the board
-    static constexpr int topBarH = 44, minWidth = 680, globalH = TransposerPanel::panelH + 8;
-    static constexpr int editorH = BoardComponent::boardH + topBarH + 14 + globalH;
+    PresetBar presetBar;                      // preset row above the level bar
+    static constexpr int presetH = PresetBar::barH, topBarH = 44, minWidth = 680, globalH = TransposerPanel::panelH + 8;
+    static constexpr int editorH = presetH + BoardComponent::boardH + topBarH + 14 + globalH;
 };

@@ -250,8 +250,10 @@ PedalboardEditor::PedalboardEditor(PedalboardProcessor& p)
     : AudioProcessorEditor(p), proc(p), board(p),
       inputLevel("INPUT", p.apvts, "board_in", [&p] { return PedalboardProcessor::takePeak(p.inPeak); }),
       outputLevel("OUTPUT", p.apvts, "board_out", [&p] { return PedalboardProcessor::takePeak(p.outPeak); }),
-      transposerPanel(p.apvts, [&p] { return p.studioLatencySamples(); })
+      transposerPanel(p.apvts, [&p] { return p.studioLatencySamples(); }),
+      presetBar(p.presets)
 {
+    addAndMakeVisible(presetBar);
     addAndMakeVisible(transposerPanel);
     addAndMakeVisible(inputLevel); addAndMakeVisible(outputLevel);
     viewport.setViewedComponent(&board, false);
@@ -277,12 +279,18 @@ void PedalboardEditor::updateSize() { setSize(juce::jlimit(minWidth, 1400, board
 void PedalboardEditor::paint(juce::Graphics& g)
 {
     g.fillAll(juce::Colour(0xff1a1a1a));
+    auto r = getLocalBounds();
+    g.setColour(juce::Colour(0xff1d1f22));
+    g.fillRect(r.removeFromTop(presetH));
     g.setColour(juce::Colour(0xff232629));
-    g.fillRect(getLocalBounds().removeFromTop(topBarH));
+    g.fillRect(r.removeFromTop(topBarH));
+    g.setColour(juce::Colours::black.withAlpha(0.5f));
+    g.fillRect(0, presetH, getWidth(), 1);
 }
 void PedalboardEditor::resized()
 {
     auto r = getLocalBounds();
+    presetBar.setBounds(r.removeFromTop(presetH));
     auto bar = r.removeFromTop(topBarH).reduced(8, 6);
     inputLevel.setBounds(bar.removeFromLeft(240));
     outputLevel.setBounds(bar.removeFromRight(240));

@@ -47,7 +47,9 @@ PedalboardProcessor::PedalboardProcessor()
     : AudioProcessor(BusesProperties()
           .withInput("Input", juce::AudioChannelSet::stereo(), true)
           .withOutput("Output", juce::AudioChannelSet::stereo(), true)),
-      apvts(*this, nullptr, "STATE", makeLayout(pedals))
+      apvts(*this, nullptr, "STATE", makeLayout(pedals)),
+      presets(apvts, [this] { return getBoard(); }, [this](const juce::StringArray& ids) { setBoard(ids); },
+              juce::StringArray { "bm" })            // = the default board below
 {
     for (auto& p : pedals) p->bindParameters(apvts);
     inGainDb = apvts.getRawParameterValue("board_in");
@@ -175,6 +177,7 @@ void PedalboardProcessor::setStateInformation(const void* d, int n)
         apvts.replaceState(juce::ValueTree::fromXml(*xml));
         juce::StringArray ids; ids.addTokens(apvts.state.getProperty("board", "bm").toString(), ",", "");
         setBoard(ids);
+        presets.restoredFromState();
     }
 }
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter() { return new PedalboardProcessor(); }

@@ -9,6 +9,7 @@
 #include "Pedals/Gatekeeper.h"
 #include "Pedals/Thunderhead.h"
 #include "Global/Transposer.h"
+#include "Global/PresetManager.h"
 
 class PedalboardProcessor : public juce::AudioProcessor, public juce::ChangeBroadcaster, private juce::Timer
 {
@@ -39,6 +40,8 @@ public:
     std::vector<std::unique_ptr<PedalBase>> pedals;     // every available pedal type
 
     juce::AudioProcessorValueTreeState apvts;
+    // Board presets: pedals + order + their settings + the transposer (not the INPUT/OUTPUT levels).
+    PresetManager presets;
 
     // ---- Board input / output level (parameters "board_in" / "board_out", in dB) ----
     // Peak meters for the UI: the audio thread raises them, the editor reads and decays them.
