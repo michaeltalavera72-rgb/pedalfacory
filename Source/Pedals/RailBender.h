@@ -21,6 +21,7 @@ class RailBender : public PedalBase
 public:
     juce::String getId() const override { return "rb"; }
     juce::String getName() const override { return "Rail Bender"; }
+    PedalCategory getCategory() const override { return PedalCategory::Distortion; }
     juce::String getBasedOn() const override { return "T-Rex Hobo Drive (schematic V1.2.3, 2011)"; }
     juce::String secondarySwitchId() const override { return "rb_boost_on"; }
     juce::String secondarySwitchLabel() const override { return "BOOST"; }

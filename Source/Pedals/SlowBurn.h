@@ -42,6 +42,7 @@ class SlowBurn : public PedalBase
 public:
     juce::String getId() const override { return "sb"; }
     juce::String getName() const override { return "Slow Burn"; }
+    PedalCategory getCategory() const override { return PedalCategory::Distortion; }
     juce::String getBasedOn() const override
     {
         return "Soldano Super Lead Overdrive pedal (the SLO-100 amp in a box), here with a 12AX7 valve in its two "

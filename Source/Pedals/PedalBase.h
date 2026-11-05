@@ -3,6 +3,23 @@
 #include <juce_dsp/juce_dsp.h>
 #include <array>
 
+// Top-level groups in the "+ Add pedal" menu, in the order they appear there.
+// To add a category: add it to the enum, give it a name in categoryName() and list it in allCategories.
+// Categories with no pedals are left out of the menu.
+enum class PedalCategory { Tools, Fuzz, Distortion };
+
+inline juce::String categoryName(PedalCategory c)
+{
+    switch (c)
+    {
+        case PedalCategory::Tools:      return "Tools";
+        case PedalCategory::Fuzz:       return "Fuzz";
+        case PedalCategory::Distortion: return "Distortion";
+    }
+    return "Other";
+}
+inline constexpr PedalCategory allCategories[] = { PedalCategory::Tools, PedalCategory::Fuzz, PedalCategory::Distortion };
+
 // Every pedal implements this interface. The board owns pedals in a vector
 // and runs them in order (guitar -> pedal 1 -> pedal 2 -> ... -> output).
 class PedalBase
@@ -11,6 +28,7 @@ public:
     virtual ~PedalBase() = default;
     virtual juce::String getId() const = 0;          // stable id, used in parameter ids
     virtual juce::String getName() const = 0;        // display name
+    virtual PedalCategory getCategory() const = 0;   // which "+ Add pedal" submenu it is listed under
     // Which real pedal/circuit this models, shown as a tooltip on the pedal's name.
     // Real product names only identify the circuit; the pedal is shown under its own name and artwork.
     virtual juce::String getBasedOn() const { return {}; }

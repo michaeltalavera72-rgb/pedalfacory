@@ -16,6 +16,7 @@ class RamhornFuzz : public PedalBase
 public:
     juce::String getId() const override { return "bm"; }
     juce::String getName() const override { return "Ramhorn Fuzz"; }
+    PedalCategory getCategory() const override { return PedalCategory::Fuzz; }
     juce::String getBasedOn() const override { return "Electro-Harmonix Big Muff Pi (Ram's Head era, early 1970s)"; }
 
     // Tooltip text for each control (the editor adds the control's name on top).

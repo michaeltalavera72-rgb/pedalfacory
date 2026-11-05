@@ -36,6 +36,7 @@ class Thunderhead : public PedalBase
 public:
     juce::String getId() const override { return "th"; }
     juce::String getName() const override { return "Thunderhead"; }
+    PedalCategory getCategory() const override { return PedalCategory::Distortion; }
     juce::String getBasedOn() const override
     {
         return "Diezel VH4 pedal (the VH4 amp's high-gain channel in a box, with Deep and Presence)";

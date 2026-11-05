@@ -24,6 +24,7 @@ class Buzzsaw : public PedalBase
 public:
     juce::String getId() const override { return "hm"; }
     juce::String getName() const override { return "Buzzsaw"; }
+    PedalCategory getCategory() const override { return PedalCategory::Distortion; }
     juce::String getBasedOn() const override { return "Boss HM-2 Heavy Metal (1983, made in Japan)"; }
 
     // Tooltip text for each control (the editor adds the control's name on top).

@@ -67,11 +67,14 @@ private:
 };
 
 struct Overdrive  : DriveBase { juce::String getId() const override { return "od"; } juce::String getName() const override { return "Overdrive"; }
+    PedalCategory getCategory() const override { return PedalCategory::Distortion; }
     juce::String getBasedOn() const override { return "Generic placeholder - not based on a specific pedal yet"; }
     float shape(float x) const override { return std::tanh(x); } };
 struct Distortion : DriveBase { juce::String getId() const override { return "ds"; } juce::String getName() const override { return "Distortion"; }
+    PedalCategory getCategory() const override { return PedalCategory::Distortion; }
     juce::String getBasedOn() const override { return "Generic placeholder - not based on a specific pedal yet"; }
     float shape(float x) const override { return juce::jlimit(-1.0f, 1.0f, x); } };
 struct Fuzz       : DriveBase { juce::String getId() const override { return "fz"; } juce::String getName() const override { return "Fuzz"; }
+    PedalCategory getCategory() const override { return PedalCategory::Fuzz; }
     juce::String getBasedOn() const override { return "Generic placeholder - not based on a specific pedal yet"; }
     float shape(float x) const override { return x > 0 ? std::tanh(x * 2.0f) : std::tanh(x * 0.6f) * 1.3f; } };

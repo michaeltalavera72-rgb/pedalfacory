@@ -29,6 +29,7 @@ class FeralHound : public PedalBase
 public:
     juce::String getId() const override { return "ad"; }
     juce::String getName() const override { return "Feral Hound"; }
+    PedalCategory getCategory() const override { return PedalCategory::Distortion; }
     juce::String getBasedOn() const override { return "VFE Alpha Dog v2 distortion (LM308 RAT-style circuit with Fat, Soft and Hard clipping controls)"; }
 
     // Tooltip text for each control (the editor adds the control's name on top).

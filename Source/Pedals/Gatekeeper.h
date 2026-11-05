@@ -27,6 +27,7 @@ class Gatekeeper : public PedalBase
 public:
     juce::String getId() const override { return "ng"; }
     juce::String getName() const override { return "Gatekeeper"; }
+    PedalCategory getCategory() const override { return PedalCategory::Tools; }
     juce::String getBasedOn() const override
     {
         return "Boss NF-1 Noise Gate (1979, JFET expander), keyed from the clean guitar like a noise-suppressor loop";

@@ -1,4 +1,5 @@
 #include "PluginEditor.h"
+#include <algorithm>
 
 // ---------------- PedalStrip ----------------
 // Tooltip for a control: its name in capitals, then what it does (PedalBase::describe).
@@ -262,8 +263,27 @@ PedalboardEditor::PedalboardEditor(PedalboardProcessor& p)
     addAndMakeVisible(viewport); addAndMakeVisible(addButton);
     addButton.onClick = [this]
     {
-        juce::PopupMenu m; auto onBoard = proc.getBoard(); int i = 1;
-        for (auto& pd : proc.pedals) m.addItem(i++, pd->getName(), ! onBoard.contains(pd->getId()));
+        // One submenu per category (menu order = allCategories), pedals A-Z inside each.
+        // Item id = index in proc.pedals + 1. Pedals already on the board are greyed out.
+        juce::PopupMenu m; auto onBoard = proc.getBoard();
+        for (auto cat : allCategories)
+        {
+            std::vector<int> idx;
+            for (int i = 0; i < (int) proc.pedals.size(); ++i)
+                if (proc.pedals[(size_t) i]->getCategory() == cat) idx.push_back(i);
+            if (idx.empty()) continue;
+            std::sort(idx.begin(), idx.end(), [this](int a, int b)
+                { return proc.pedals[(size_t) a]->getName().compareNatural(proc.pedals[(size_t) b]->getName()) < 0; });
+            juce::PopupMenu sub; int available = 0;
+            for (int i : idx)
+            {
+                auto& pd = proc.pedals[(size_t) i];
+                const bool free = ! onBoard.contains(pd->getId());
+                sub.addItem(i + 1, pd->getName(), free, ! free);    // ticked + greyed = already on the board
+                available += free ? 1 : 0;
+            }
+            m.addSubMenu(categoryName(cat), sub, available > 0);
+        }
         m.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(addButton), [this](int r)
         {
             if (r <= 0) return;
