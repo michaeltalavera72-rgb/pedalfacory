@@ -31,6 +31,19 @@ public:
     juce::String getName() const override { return "Feral Hound"; }
     juce::String getBasedOn() const override { return "VFE Alpha Dog v2 distortion (LM308 RAT-style circuit with Fat, Soft and Hard clipping controls)"; }
 
+    // Tooltip text for each control (the editor adds the control's name on top).
+    juce::String describe(const juce::String& id) const override
+    {
+        if (id == "ad_bypass") return "Footswitch: turns Feral Hound on or off.";
+        if (id == "ad_gain") return "Amount of distortion, from light overdrive to thick, compressed fuzz.";
+        if (id == "ad_filter") return "Tone filter: down = dark and smooth, up = brighter and more aggressive.";
+        if (id == "ad_level") return "Output level of the pedal.";
+        if (id == "ad_fat") return "Adds low end and extra gain (a bigger bass shelf in the gain stage).";
+        if (id == "ad_soft") return "Extra clipping in the op-amp feedback. Noon (detent) = off. Left = germanium diode (warm, soft); right = MOSFET (more open, amp-like). Double-click: noon.";
+        if (id == "ad_hard") return "Clipping diodes to ground. Noon (detent) = off. Left = stacked silicon (louder, looser); right = classic single pair (tight, compressed RAT sound). Double-click: noon.";
+        return {};
+    }
+
     void addParameters(juce::AudioProcessorValueTreeState::ParameterLayout& l) override
     {
         using P = juce::AudioParameterFloat;

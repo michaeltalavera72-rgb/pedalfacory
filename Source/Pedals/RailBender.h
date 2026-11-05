@@ -25,6 +25,18 @@ public:
     juce::String secondarySwitchId() const override { return "rb_boost_on"; }
     juce::String secondarySwitchLabel() const override { return "BOOST"; }
 
+    // Tooltip text for each control (the editor adds the control's name on top).
+    juce::String describe(const juce::String& id) const override
+    {
+        if (id == "rb_bypass") return "Left footswitch: turns the DRIVE section on or off.";
+        if (id == "rb_boost_on") return "Right footswitch: turns the BOOST on or off. The boost sits before the drive and also works with the drive off.";
+        if (id == "rb_drive") return "Amount of germanium-diode overdrive.";
+        if (id == "rb_tone") return "Treble: down = darker, up = brighter.";
+        if (id == "rb_level") return "Output level of the drive section.";
+        if (id == "rb_boost") return "Clean boost amount, 0 to +15 dB (when the BOOST footswitch is on). Also pushes the drive harder.";
+        return {};
+    }
+
     void addParameters(juce::AudioProcessorValueTreeState::ParameterLayout& l) override
     {
         using P = juce::AudioParameterFloat;

@@ -32,6 +32,16 @@ public:
         return "Boss NF-1 Noise Gate (1979, JFET expander), keyed from the clean guitar like a noise-suppressor loop";
     }
 
+    // Tooltip text for each control (the editor adds the control's name on top).
+    juce::String describe(const juce::String& id) const override
+    {
+        if (id == "ng_bypass") return "Footswitch: turns the noise gate on or off.";
+        if (id == "ng_sens") return "Level at which the gate opens: -30 dBFS fully left to -85 dBFS fully right (it closes 6 dB lower). Right = more sensitive, lets quiet playing through. Turn it left until the hiss between notes is gone, but not so far that soft notes get cut off.";
+        if (id == "ng_decay") return "How long the gate takes to fade out after you stop playing (20 ms to 2 s). Short = tight, staccato stops; long = natural decay of sustained notes.";
+        if (id == "ng_hard") return "How far the gate closes. HARD (up): full mute, silent between notes. SOFT (down): -25 dB, like the original NF-1: quieter but more natural.";
+        return {};
+    }
+
     void addParameters(juce::AudioProcessorValueTreeState::ParameterLayout& l) override
     {
         using P = juce::AudioParameterFloat;
@@ -47,7 +57,7 @@ public:
                 return t < 1.0f ? juce::String(juce::roundToInt(t * 1000.0f)) + " ms" : juce::String(t, 2) + " s"; })));
         l.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{"ng_hard",1}, "Gatekeeper Hard", true));
         knobIds = { "ng_sens", "ng_decay" };   // THRESHOLD, RELEASE (left to right on the face)
-        toggleId = "ng_hard"; toggleLabel = "HARD";   // up = HARD (mute), down = SOFT (-25 dB)
+        toggleId = "ng_hard"; toggleLabel = "HARD / SOFT";   // up = HARD (mute), down = SOFT (-25 dB)
     }
     void bindParameters(juce::AudioProcessorValueTreeState& s) override
     {

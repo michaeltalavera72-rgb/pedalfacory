@@ -18,6 +18,16 @@ public:
     juce::String getName() const override { return "Ramhorn Fuzz"; }
     juce::String getBasedOn() const override { return "Electro-Harmonix Big Muff Pi (Ram's Head era, early 1970s)"; }
 
+    // Tooltip text for each control (the editor adds the control's name on top).
+    juce::String describe(const juce::String& id) const override
+    {
+        if (id == "bm_bypass") return "Footswitch: turns Ramhorn Fuzz on or off.";
+        if (id == "bm_volume") return "Output level of the pedal.";
+        if (id == "bm_tone") return "Blends a bass-heavy and a treble-heavy filter with a mid scoop between them. Down = dark and fat, up = bright and cutting.";
+        if (id == "bm_sustain") return "Amount of fuzz and sustain: how hard the two clipping stages are driven.";
+        return {};
+    }
+
     void addParameters(juce::AudioProcessorValueTreeState::ParameterLayout& l) override
     {
         using P = juce::AudioParameterFloat;

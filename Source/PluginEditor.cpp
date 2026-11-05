@@ -1,6 +1,13 @@
 #include "PluginEditor.h"
 
 // ---------------- PedalStrip ----------------
+// Tooltip for a control: its name in capitals, then what it does (PedalBase::describe).
+static juce::String tipFor(const PedalBase& pd, const juce::String& paramId, const juce::String& name)
+{
+    const auto d = pd.describe(paramId);
+    return name.toUpperCase() + (d.isNotEmpty() ? "\n" + d : juce::String(" on/off"));
+}
+
 PedalStrip::PedalStrip(PedalboardProcessor& p, PedalBase& pd, BoardComponent& b)
     : pedal(pd), board(b), face(createFaceFor(pd.getId()))
 {
@@ -8,6 +15,7 @@ PedalStrip::PedalStrip(PedalboardProcessor& p, PedalBase& pd, BoardComponent& b)
     remove.onClick = [this] { board.removePedal(pedal); };
     auto& bypassButton = face ? static_cast<juce::Button&>(footswitch) : static_cast<juce::Button&>(bypass);
     addAndMakeVisible(bypassButton);
+    bypassButton.setTooltip(tipFor(pd, pd.getId() + "_bypass", pd.secondarySwitchId().isNotEmpty() ? "Drive" : "Bypass"));
     bypassAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
         p.apvts, pd.getId() + "_bypass", bypassButton);
     for (auto& id : pd.knobIds)
@@ -28,6 +36,7 @@ PedalStrip::PedalStrip(PedalboardProcessor& p, PedalBase& pd, BoardComponent& b)
             l->setFont(juce::FontOptions(11.5f, juce::Font::bold));
             l->setColour(juce::Label::textColourId, face->labelColour());
         }
+        s->setTooltip(tipFor(pd, id, p.apvts.getParameter(id)->getName(40)));
         addAndMakeVisible(s); addChildComponent(l); l->setVisible(! (face && face->drawsLabels()));
         atts.push_back(std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(p.apvts, id, *s));
     }
@@ -40,15 +49,14 @@ PedalStrip::PedalStrip(PedalboardProcessor& p, PedalBase& pd, BoardComponent& b)
             addAndMakeVisible(footswitch2);
             secondAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
                 p.apvts, pd.secondarySwitchId(), footswitch2);
-            footswitch.setTooltip("Drive on/off");
-            footswitch2.setTooltip(pd.secondarySwitchLabel() + " on/off");
+            footswitch2.setTooltip(tipFor(pd, pd.secondarySwitchId(), pd.secondarySwitchLabel()));
         }
         if (pd.toggleId.isNotEmpty())
         {
             toggle.imageFor = [this](bool up) { return face->toggleImage(up); };
             addAndMakeVisible(toggle);
             toggleAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(p.apvts, pd.toggleId, toggle);
-            toggle.setTooltip(pd.toggleLabel.substring(0, 1) + pd.toggleLabel.substring(1).toLowerCase() + " on/off");
+            toggle.setTooltip(tipFor(pd, pd.toggleId, pd.toggleLabel));
         }
         startTimerHz(20);
     }

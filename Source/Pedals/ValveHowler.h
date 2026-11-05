@@ -22,6 +22,16 @@ public:
     juce::String getName() const override { return "Valve Howler"; }
     juce::String getBasedOn() const override { return "Ibanez TS-808 Tube Screamer (late 1970s, JRC4558 op-amp)"; }
 
+    // Tooltip text for each control (the editor adds the control's name on top).
+    juce::String describe(const juce::String& id) const override
+    {
+        if (id == "ts_bypass") return "Footswitch: turns Valve Howler on or off.";
+        if (id == "ts_drive") return "Amount of overdrive. Low = clean boost with a mid hump, high = smooth, singing overdrive.";
+        if (id == "ts_tone") return "Treble: down = warm and smooth, up = brighter and more cutting.";
+        if (id == "ts_level") return "Output level of the pedal. Turn up with low Drive to push an amp or another pedal.";
+        return {};
+    }
+
     void addParameters(juce::AudioProcessorValueTreeState::ParameterLayout& l) override
     {
         using P = juce::AudioParameterFloat;

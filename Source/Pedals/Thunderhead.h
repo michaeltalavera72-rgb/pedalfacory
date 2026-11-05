@@ -41,6 +41,21 @@ public:
         return "Diezel VH4 pedal (the VH4 amp's high-gain channel in a box, with Deep and Presence)";
     }
 
+    // Tooltip text for each control (the editor adds the control's name on top).
+    juce::String describe(const juce::String& id) const override
+    {
+        if (id == "th_bypass") return "Footswitch: turns Thunderhead on or off (red LED = on).";
+        if (id == "th_gain") return "How hard the two clipping stages are driven. Low = crunchy, noon = full high-gain saturation, above noon = more compression and sustain. Fully down is almost silent, like the real pot.";
+        if (id == "th_deep") return "Resonant low-end boost around 115 Hz in the last stage (up to about +10 dB). Turn up for a bigger, heavier bottom end; down for a tighter sound.";
+        if (id == "th_volume") return "Output level of the pedal.";
+        if (id == "th_bass") return "Low frequencies in the Marshall-style tone stack.";
+        if (id == "th_mid") return "Mid frequencies in the tone stack. Down = scooped, up = punchier and more forward.";
+        if (id == "th_treble") return "High frequencies in the tone stack. The bass and middle controls interact with it.";
+        if (id == "th_presence") return "Upper-mid / treble lift in the last stage (up to about +24 dB above 1 kHz). Adds bite and cut; near full it also adds a little extra grit.";
+        if (id == "th_amp") return "Output voicing. AMP (up): the pedal's darker output for the front of a guitar amp (rolled off above about 1.2 kHz). DIRECT (down): the brighter, unfiltered power-amp output, better into an amp sim, FRFR or a power amp. Same level.";
+        return {};
+    }
+
     void addParameters(juce::AudioProcessorValueTreeState::ParameterLayout& l) override
     {
         using P = juce::AudioParameterFloat;
@@ -56,7 +71,7 @@ public:
             juce::AudioParameterBoolAttributes().withStringFromValueFunction([](bool b, int) { return juce::String(b ? "Amp" : "Direct"); })));
         // Top row (big knobs: GAIN / DEEP / VOLUME), then the bottom row (small knobs: the EQ, low to high).
         knobIds = { "th_gain", "th_deep", "th_volume", "th_bass", "th_mid", "th_treble", "th_presence" };
-        toggleId = "th_amp"; toggleLabel = "AMP";
+        toggleId = "th_amp"; toggleLabel = "AMP / DIRECT";
     }
     void bindParameters(juce::AudioProcessorValueTreeState& s) override
     {

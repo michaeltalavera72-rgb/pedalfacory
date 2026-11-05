@@ -5,6 +5,15 @@
 class DriveBase : public PedalBase
 {
 public:
+    juce::String describe(const juce::String& id) const override
+    {
+        if (id.endsWith("_bypass")) return "Footswitch: turns the pedal on or off.";
+        if (id.endsWith("_drive"))  return "Amount of distortion.";
+        if (id.endsWith("_tone"))   return "Treble: down = darker, up = brighter.";
+        if (id.endsWith("_level"))  return "Output level of the pedal.";
+        return {};
+    }
+
     void addParameters(juce::AudioProcessorValueTreeState::ParameterLayout& l) override
     {
         using P = juce::AudioParameterFloat;

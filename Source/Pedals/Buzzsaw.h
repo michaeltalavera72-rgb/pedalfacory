@@ -26,6 +26,17 @@ public:
     juce::String getName() const override { return "Buzzsaw"; }
     juce::String getBasedOn() const override { return "Boss HM-2 Heavy Metal (1983, made in Japan)"; }
 
+    // Tooltip text for each control (the editor adds the control's name on top).
+    juce::String describe(const juce::String& id) const override
+    {
+        if (id == "hm_bypass") return "Footswitch: turns Buzzsaw on or off.";
+        if (id == "hm_level") return "Output level of the pedal.";
+        if (id == "hm_low") return "COLOR MIX low band around 90 Hz, about +/-21 dB. Noon = flat. Up = huge, chainsaw low end.";
+        if (id == "hm_high") return "COLOR MIX high band around 1 kHz, about +/-21 dB. Noon = flat. Up = the classic buzzsaw snarl.";
+        if (id == "hm_dist") return "Amount of distortion. Low settings stay thick and bassy; high = full HM-2 saturation.";
+        return {};
+    }
+
     void addParameters(juce::AudioProcessorValueTreeState::ParameterLayout& l) override
     {
         using P = juce::AudioParameterFloat;

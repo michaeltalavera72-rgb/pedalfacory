@@ -14,6 +14,9 @@ public:
     // Which real pedal/circuit this models, shown as a tooltip on the pedal's name.
     // Real product names only identify the circuit; the pedal is shown under its own name and artwork.
     virtual juce::String getBasedOn() const { return {}; }
+    // Tooltip description of one control (knob, toggle or footswitch), by parameter id. The editor shows the
+    // control's name above it, so the printed labels (often tiny on the artwork) can always be read.
+    virtual juce::String describe(const juce::String& paramId) const { juce::ignoreUnused(paramId); return {}; }
     virtual void addParameters(juce::AudioProcessorValueTreeState::ParameterLayout&) = 0;
     virtual void bindParameters(juce::AudioProcessorValueTreeState&) = 0;
     virtual void prepare(const juce::dsp::ProcessSpec&) = 0;
@@ -36,7 +39,7 @@ public:
     juce::StringArray detentKnobIds;   // knobs with a centre detent: snap to noon, double-click = noon
     // Optional mini toggle switch on the face (e.g. a voicing switch). Bool parameter, true = up/ON.
     // Not a footswitch: it never bypasses the pedal.
-    juce::String toggleId, toggleLabel;
+    juce::String toggleId, toggleLabel;     // toggleLabel = the toggle's name in its tooltip (e.g. "HARD / SOFT")
 
     // Optional "effects loop" return stage (e.g. a keyed noise gate). When hasReturnStage() is true the board
     // calls process() at the pedal's slot, then processReturn() on the same block after the later pedals:

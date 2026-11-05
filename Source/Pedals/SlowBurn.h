@@ -48,6 +48,20 @@ public:
                "main gain stages";
     }
 
+    // Tooltip text for each control (the editor adds the control's name on top).
+    juce::String describe(const juce::String& id) const override
+    {
+        if (id == "sb_bypass") return "Footswitch: turns Slow Burn on or off.";
+        if (id == "sb_gain") return "How hard the 12AX7 valve stages are driven: from edge-of-breakup crunch to saturated lead.";
+        if (id == "sb_presence") return "Upper-treble lift in the power stage: adds sparkle and cut.";
+        if (id == "sb_volume") return "Output level of the pedal.";
+        if (id == "sb_bass") return "Low frequencies in the SLO-style tone stack.";
+        if (id == "sb_mid") return "Mid frequencies in the tone stack. Down = scooped, up = thicker and more forward.";
+        if (id == "sb_treble") return "High frequencies in the tone stack.";
+        if (id == "sb_deep") return "Up = full low end (like the amp's Depth switch on), down = tighter, leaner bass.";
+        return {};
+    }
+
     void addParameters(juce::AudioProcessorValueTreeState::ParameterLayout& l) override
     {
         using P = juce::AudioParameterFloat;
