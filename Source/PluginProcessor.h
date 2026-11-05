@@ -7,6 +7,7 @@
 #include "Pedals/FeralHound.h"
 #include "Pedals/SlowBurn.h"
 #include "Pedals/Gatekeeper.h"
+#include "Pedals/Thunderhead.h"
 #include "Global/Transposer.h"
 
 class PedalboardProcessor : public juce::AudioProcessor, public juce::ChangeBroadcaster, private juce::Timer

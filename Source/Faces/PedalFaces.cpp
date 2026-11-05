@@ -867,6 +867,56 @@ private:
     juce::Image art, toggleUp, toggleDn;
 };
 
+// ---------------------------------------------------------------------------
+// Thunderhead (based on the Diezel VH4 pedal): Michael's full-face artwork (Assets/thunderhead_art.png: the storm
+// face over the mountains, "THUNDERHEAD", "DISTORTION LIKE A STORM", every control label) printed edge to edge on a
+// worn black enclosure. All seven knobs, the LED, the footswitch and the AMP/DIRECT toggle sit where
+// Tools/Art/make_thunderhead_art.py placed them (FaceLayout: 7 knobs + toggle).
+class ThunderheadFace : public RenderedFace
+{
+public:
+    static constexpr float togglePad = 1.30f;    // = render_thunderhead.py
+
+    ThunderheadFace() : RenderedFace("thunderhead")
+    {
+        art = juce::ImageCache::getFromMemory(BinaryData::thunderhead_art_png, BinaryData::thunderhead_art_pngSize);
+        toggleUp = loadImage("thunderhead_toggle_up_png"); toggleDn = loadImage("thunderhead_toggle_down_png");
+    }
+    bool drawsLabels() const override { return true; }                 // all lettering is in the artwork
+    juce::Colour labelColour() const override { return juce::Colour(0xffdfe3e8); }
+    juce::Rectangle<float> toggleBounds(juce::Rectangle<float> r) const override
+    {
+        return rendered() && toggleUp.isValid() ? r.withSizeKeepingCentre(r.getWidth() * togglePad, r.getHeight() * togglePad) : r;
+    }
+    const juce::Image* toggleImage(bool up) const override
+    {
+        if (! rendered()) return nullptr;
+        auto& img = up ? toggleUp : toggleDn;
+        return img.isValid() ? &img : nullptr;
+    }
+
+protected:
+    void paintVector(juce::Graphics& g, const FaceLayout& f, bool active) override
+    {
+        using namespace juce;
+        const auto b = f.body;
+        g.setColour(Colours::black.withAlpha(0.45f));
+        g.fillRoundedRectangle(b.translated(0, 3), 9.0f);
+        g.setGradientFill(ColourGradient(Colour(0xff2a2b2e), b.getX(), b.getY(), Colour(0xff0b0b0c), b.getRight(), b.getBottom(), false));
+        g.fillRoundedRectangle(b, 9.0f);
+        if (art.isValid())
+        {
+            g.setImageResamplingQuality(Graphics::highResamplingQuality);
+            g.setOpacity(1.0f);
+            g.drawImage(art, f.emblem);
+        }
+        drawLed(g, f.led, active);
+    }
+
+private:
+    juce::Image art, toggleUp, toggleDn;
+};
+
 std::unique_ptr<PedalFace> createFaceFor(const juce::String& pedalId)
 {
     if (pedalId == "bm") return std::make_unique<RamhornFace>();
@@ -876,5 +926,6 @@ std::unique_ptr<PedalFace> createFaceFor(const juce::String& pedalId)
     if (pedalId == "ad") return std::make_unique<FeralHoundFace>();
     if (pedalId == "sb") return std::make_unique<SlowBurnFace>();
     if (pedalId == "ng") return std::make_unique<GatekeeperFace>();
+    if (pedalId == "th") return std::make_unique<ThunderheadFace>();
     return nullptr;
 }

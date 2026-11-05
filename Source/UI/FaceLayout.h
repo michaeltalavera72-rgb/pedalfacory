@@ -105,6 +105,32 @@ struct FaceLayout
             f.toggle      = juce::Rectangle<float>(W * 0.10f, W * 0.16f).withCentre({ x0 + W * 0.23f, y0 + H * 0.8148f });
             f.toggleLabel = juce::Rectangle<float>(W * 0.20f, H * 0.03f).withCentre({ x0 + W * 0.23f, y0 + H * 0.752f });
         }
+        if (numKnobs == 7)
+        {
+            // Thunderhead: Michael's full-face artwork (Assets/thunderhead_art.png), printed artInset inside the edge
+            // like Gatekeeper. Big knobs GAIN / DEEP / VOLUME sit on the art's three painted knobs; the small EQ knobs
+            // flank the storm face (BASS / MIDDLE left, TREBLE / PRESENCE right); LED and footswitch on the painted
+            // ones; AMP/DIRECT toggle bottom-left. Fractions from Tools/Art/make_thunderhead_art.py (= render_thunderhead.py).
+            f.knobs.clear(); f.labels.clear();
+            const float d1 = W * 0.23f, d2 = W * 0.13f;
+            const float pos[7][2] = { { 0.1900f, 0.1584f }, { 0.5022f, 0.1584f }, { 0.8143f, 0.1584f },
+                                      { 0.1039f, 0.3149f }, { 0.2632f, 0.3149f }, { 0.7389f, 0.3149f }, { 0.8961f, 0.3149f } };
+            for (int i = 0; i < 7; ++i)
+            {
+                const float d = i < 3 ? d1 : d2;
+                const auto k = juce::Rectangle<float>(d, d).withCentre({ x0 + W * pos[i][0], y0 + H * pos[i][1] });
+                f.knobs.add(k);
+                f.labels.add({ k.getX(), k.getBottom(), d, 13.0f });      // printed in the art; unused
+            }
+            f.emblem   = body.reduced(W * artInset);
+            f.name     = f.emblem;                                         // the artwork carries name + labels
+            f.subtitle = {};
+            f.led      = juce::Rectangle<float>(11.0f, 11.0f).withCentre({ x0 + W * 0.5011f, y0 + H * 0.7424f });
+            f.footswitch = juce::Rectangle<float>(sw, sw).withCentre({ x0 + W * 0.4978f, y0 + H * 0.8513f });
+            f.hasToggle = withToggle;
+            f.toggle      = juce::Rectangle<float>(W * 0.10f, W * 0.16f).withCentre({ x0 + W * 0.2202f, y0 + H * 0.8485f });
+            f.toggleLabel = {};                                            // AMP / DIRECT printed in the art
+        }
         if (numSwitches >= 2)
         {
             f.twoSwitches = true;

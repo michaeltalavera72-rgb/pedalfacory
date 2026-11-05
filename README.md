@@ -77,6 +77,15 @@ createFaceFor() for the pedal's id. Without a face the pedal gets the plain gene
   voicing matches the real (op-amp) circuit within 0.5 dB from 50 Hz to 6 kHz
   (Tools/Analysis/slo_reference_response.py). Gloss-black face with Michael's candle-and-sun artwork (Assets/slowburn_art.png) and the valve standing
   upright in a window.
+- Thunderhead (id "th"): our model of the Diezel VH4 pedal (the VH4 amp's high-gain channel in a box), from
+  the schematic in schematics/Diezel (pot values from the PedalPCB Valhalla parts list). Gain / Deep / Volume
+  (big knobs), Bass / Middle / Treble / Presence (small), AMP/DIRECT mini toggle (up = the pedal's darker
+  "amp input" output, down = the unfiltered "power amp" tap, level-matched), footswitch = bypass. Zener-limited
+  x101 stage and a diode gate solved per sample, rail-clipping TL072 stage, Marshall-style stack, presence and
+  gyrator "deep" resonance in the last stage. Small-signal response matches the circuit within 0.5 dB from
+  30 Hz to 4 kHz (Tools/Analysis/vh4_reference_response.py). Face = Michael's storm artwork (Tools/Art/
+  thunderhead_original.png -> make_thunderhead_art.py -> Assets/thunderhead_art.png: painted controls removed,
+  labels for the seven knobs and the toggle printed in Bitter), photoreal render via Tools/Blender/render_thunderhead.py.
 - Overdrive, Distortion, Fuzz: generic placeholders.
 
 ## Third-party code
@@ -90,6 +99,8 @@ createFaceFor() for the pedal's id. Without a face the pedal gets the plain gene
 - Assets/Rye-Regular.ttf: Rye, SIL Open Font License 1.1 (Assets/Rye-OFL.txt).
 - Assets/Poppins-BoldItalic.ttf: Poppins, SIL Open Font License 1.1 (Assets/Poppins-OFL.txt).
 - Assets/BlackOpsOne-Regular.ttf: Black Ops One, SIL Open Font License 1.1 (Assets/BlackOpsOne-OFL.txt).
+- Tools/Art/fonts/Bitter[wght].ttf: Bitter, SIL Open Font License 1.1 (Tools/Art/fonts/Bitter-OFL.txt). Only used
+  to bake Thunderhead's control labels into its artwork (not embedded in the plugin).
 
 ## Photoreal pedal graphics (Blender)
 Each pedal with artwork has Tools/Blender/render_<pedal>.py (shared code in pedal_render_common.py).
