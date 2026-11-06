@@ -8,6 +8,7 @@
 #include "Pedals/SlowBurn.h"
 #include "Pedals/Gatekeeper.h"
 #include "Pedals/Thunderhead.h"
+#include "Pedals/GoldenHaze.h"
 #include "Global/Transposer.h"
 #include "Global/PresetManager.h"
 

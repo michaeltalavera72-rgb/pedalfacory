@@ -131,6 +131,23 @@ struct FaceLayout
             f.toggle      = juce::Rectangle<float>(W * 0.10f, W * 0.16f).withCentre({ x0 + W * 0.2202f, y0 + H * 0.8485f });
             f.toggleLabel = {};                                            // AMP / DIRECT printed in the art
         }
+        if (numKnobs == 1)
+        {
+            // Golden Haze: Michael's full-face artwork (Assets/goldenhaze_art.png), printed artInset inside the edge like
+            // Thunderhead. VOLUME sits on the art's painted centre knob (the template's two other knobs were painted out),
+            // LED right of the footswitch as painted. Fractions from Tools/Art/make_goldenhaze_art.py (= render_goldenhaze.py).
+            // (Only one-knob pedal so far; give the next one its own flag if it needs a different layout.)
+            f.knobs.clear(); f.labels.clear();
+            const float dk = W * 0.2261f;
+            const auto k = juce::Rectangle<float>(dk, dk).withCentre({ x0 + W * 0.5000f, y0 + H * 0.1573f });
+            f.knobs.add(k);
+            f.labels.add({ k.getX(), k.getBottom(), dk, 13.0f });          // printed in the art; unused
+            f.emblem   = body.reduced(W * artInset);
+            f.name     = f.emblem;                                         // the artwork carries name + labels
+            f.subtitle = {};
+            f.led      = juce::Rectangle<float>(11.0f, 11.0f).withCentre({ x0 + W * 0.6963f, y0 + H * 0.8413f });
+            f.footswitch = juce::Rectangle<float>(sw, sw).withCentre({ x0 + W * 0.4979f, y0 + H * 0.8385f });
+        }
         if (numSwitches >= 2)
         {
             f.twoSwitches = true;

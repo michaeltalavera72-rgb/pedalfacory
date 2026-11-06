@@ -917,6 +917,43 @@ private:
     juce::Image art, toggleUp, toggleDn;
 };
 
+// ---------------------------------------------------------------------------
+// Golden Haze (based on the Earthquake Devices Acapulco Gold): Michael's full-face artwork (Assets/goldenhaze_art.png:
+// the golden sun and swirling haze over the mountains, "Golden Haze", VOLUME, "POWER AMP - DISTORTION - HIGHER
+// GROUND") printed edge to edge on a worn gold enclosure. The VOLUME knob, LED and footswitch sit where
+// Tools/Art/make_goldenhaze_art.py left the painted ones (FaceLayout: 1 knob).
+class GoldenHazeFace : public RenderedFace
+{
+public:
+    GoldenHazeFace() : RenderedFace("goldenhaze")
+    {
+        art = juce::ImageCache::getFromMemory(BinaryData::goldenhaze_art_png, BinaryData::goldenhaze_art_pngSize);
+    }
+    bool drawsLabels() const override { return true; }                 // all lettering is in the artwork
+    juce::Colour labelColour() const override { return juce::Colour(0xffdbae5b); }
+
+protected:
+    void paintVector(juce::Graphics& g, const FaceLayout& f, bool active) override
+    {
+        using namespace juce;
+        const auto b = f.body;
+        g.setColour(Colours::black.withAlpha(0.45f));
+        g.fillRoundedRectangle(b.translated(0, 3), 9.0f);
+        g.setGradientFill(ColourGradient(Colour(0xffb08a3a), b.getX(), b.getY(), Colour(0xff4a3510), b.getRight(), b.getBottom(), false));
+        g.fillRoundedRectangle(b, 9.0f);
+        if (art.isValid())
+        {
+            g.setImageResamplingQuality(Graphics::highResamplingQuality);
+            g.setOpacity(1.0f);
+            g.drawImage(art, f.emblem);
+        }
+        drawLed(g, f.led, active);
+    }
+
+private:
+    juce::Image art;
+};
+
 std::unique_ptr<PedalFace> createFaceFor(const juce::String& pedalId)
 {
     if (pedalId == "bm") return std::make_unique<RamhornFace>();
@@ -927,5 +964,6 @@ std::unique_ptr<PedalFace> createFaceFor(const juce::String& pedalId)
     if (pedalId == "sb") return std::make_unique<SlowBurnFace>();
     if (pedalId == "ng") return std::make_unique<GatekeeperFace>();
     if (pedalId == "th") return std::make_unique<ThunderheadFace>();
+    if (pedalId == "gh") return std::make_unique<GoldenHazeFace>();
     return nullptr;
 }
