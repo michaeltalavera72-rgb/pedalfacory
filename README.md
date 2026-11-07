@@ -44,9 +44,13 @@ Parameters: gx_transpose, gx_mix, gx_level, gx_on, gx_studio (saved with the ses
 Test programs: Tools/Analysis/Transposer/ (pitch accuracy, chords, attacks, clicks, latency).
 
 ## Adding a pedal
-Subclass DriveBase (or PedalBase), return its category from getCategory() (the "+ Add pedal" submenu: Tools, Overdrive, Fuzz, Distortion), and register it in PedalboardProcessor::makeLayout. New categories go in the PedalCategory enum in PedalBase.h.
+Subclass DriveBase (or PedalBase), return its category from getCategory() (the "+ Add pedal" submenu: Tools, Boost / EQ, Overdrive, Fuzz, Distortion, Modulation), and register it in PedalboardProcessor::makeLayout. New categories go in the PedalCategory enum in PedalBase.h.
 A second footswitch (e.g. boost): override secondarySwitchId()/secondarySwitchLabel(), bind
 secondaryParam, and handle primaryOn()/secondaryOn() in process(); the face gets two switches + LEDs.
+A double-wide pedal: override widthUnits() to return 2. It takes two board slots plus the gap between them
+(body 464 x 372 px, FaceLayout::aspectFor(2)); drag-and-drop handles mixed widths. Give it a FaceLayout branch
+(keyed on the pedal id) and pass the width to RenderedFace(prefix, 2) so renders of that shape are accepted.
+On two-switch pedals primarySwitchLabel() names the left footswitch in its tooltip (default "Drive").
 A mini toggle switch (e.g. a voicing switch, never a bypass): set toggleId (a bool parameter, true = up)
 and toggleLabel; with 6 knobs the face uses the Slow Burn layout (FaceLayout::make(..., withToggle)).
 Optional artwork: write a PedalFace (see Source/Faces/PedalFaces.cpp) and return it from
@@ -86,6 +90,17 @@ createFaceFor() for the pedal's id. Without a face the pedal gets the plain gene
   30 Hz to 4 kHz (Tools/Analysis/vh4_reference_response.py). Face = Michael's storm artwork (Tools/Art/
   thunderhead_original.png -> make_thunderhead_art.py -> Assets/thunderhead_art.png: painted controls removed,
   labels for the seven knobs and the toggle printed in Bitter), photoreal render via Tools/Blender/render_thunderhead.py.
+- Coral Tide (id "ct", double-wide): our model of two Bearfoot / BJFE circuits in one enclosure, from traced
+  schematics - the Sea Blue EQ (two JFET stages around a passive treble / bass network) and the Baby Pink
+  Booster (one 2N5952 JFET stage). BOOST / LEVEL / LOW / HIGH knobs and the ORDER mini toggle (down = EQ > B,
+  up = B > EQ: the boost drives the EQ's JFETs into light grit); footswitches BOOST (left, red LED) and EQ
+  (right, blue LED; main switch). With the boost off its JFET stage stays in the path as a near-unity buffer,
+  like the original. LEVEL is a master output level (x0..x2.8, unity by default); the EQ's own volume is fixed at
+  unity. Every JFET stage is solved as a circuit (square-law JFET + network, Newton per sample, 2x oversampling),
+  biased to the traced voltages; small-signal response within ~0.3 dB of Tools/Analysis/bjfe_dual.py. Category
+  Boost / EQ. Face = Michael's coral-reef artwork (Tools/Art/coraltide_original.png -> make_coraltide_art.py ->
+  Assets/coraltide_art.png: made taller to fit the 464 x 372 body, painted controls and the mock-up's maker's mark
+  removed), photoreal render via Tools/Blender/render_coraltide.py.
 - Overdrive, Distortion, Fuzz: generic placeholders.
 
 ## Third-party code

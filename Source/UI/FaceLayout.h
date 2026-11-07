@@ -8,8 +8,13 @@ struct FaceLayout
     // Pedal body proportions (226 x 372 px since v28; was 226 x 298). Blender faces are rendered at this shape;
     // a face image with a different shape is ignored (the vector face is shown) until it is re-rendered.
     static constexpr float bodyAspect = 372.0f / 226.0f;
+    // Double-wide pedals (PedalBase::widthUnits() == 2) span two slots plus the gap between them: body 464 x 372.
+    // Body width for n units = 238 n - 12 px (slot 230 + gap 8, body = slot - 4).
+    static constexpr float bodyWidthFor(int units) { return 238.0f * (float) units - 12.0f; }
+    static constexpr float aspectFor(int units) { return 372.0f / bodyWidthFor(units); }
     // Gatekeeper's printed artwork is inset 2.6 mm on the 91 mm-wide body.
     static constexpr float artInset = 2.6f / 91.0f;
+    static constexpr float artInset2 = 2.6f * 226.0f / (91.0f * 464.0f);   // the same 2.6 mm on the double-wide body (of W)
 
     juce::Rectangle<float> body;               // the whole enclosure
     juce::Array<juce::Rectangle<float>> knobs; // one square per knob, left to right
@@ -177,6 +182,37 @@ struct FaceLayout
             f.hasToggle = withToggle;
             f.toggle      = juce::Rectangle<float>(W * 0.10f, W * 0.16f).withCentre({ x0 + W * 0.5010f, y0 + H * 0.3817f });
             f.toggleLabel = {};
+            return f;
+        }
+        if (pedalId == "ct")
+        {
+            // Coral Tide (double-wide, 464 x 372): Michael's full-face artwork (Assets/coraltide_art.png), printed artInset2
+            // inside the edge. BOOST / LEVEL knobs left, ORDER toggle between, LOW / HIGH right; footswitches BOOST (left,
+            // red LED = the secondary switch) and EQ (right, blue LED = the main switch). Every control sits where the
+            // art's painted one was (fractions printed by Tools/Art/make_coraltide_art.py = render_coraltide.py).
+            const float d = W * 0.1280f;
+            const float pos[4][2] = { { 0.1458f, 0.2207f }, { 0.3440f, 0.2194f }, { 0.6527f, 0.2194f }, { 0.8516f, 0.2194f } };
+            f.knobs.clear(); f.labels.clear();
+            for (int i = 0; i < juce::jmin(numKnobs, 4); ++i)
+            {
+                const auto k = juce::Rectangle<float>(d, d).withCentre({ x0 + W * pos[i][0], y0 + H * pos[i][1] });
+                f.knobs.add(k);
+                f.labels.add({ k.getX(), k.getBottom(), d, 13.0f });          // printed in the art; unused
+            }
+            f.emblem   = body.reduced(W * artInset2, W * artInset2);
+            f.name     = f.emblem;                                         // the artwork carries name + labels
+            f.subtitle = {};
+            const float sws = W * 0.1072f;
+            f.twoSwitches = true;
+            f.footswitch  = juce::Rectangle<float>(sws, sws).withCentre({ x0 + W * 0.6293f, y0 + H * 0.8146f });   // EQ
+            f.footswitch2 = juce::Rectangle<float>(sws, sws).withCentre({ x0 + W * 0.3668f, y0 + H * 0.8146f });   // BOOST
+            f.led  = juce::Rectangle<float>(13.0f, 13.0f).withCentre({ x0 + W * 0.6300f, y0 + H * 0.7008f });
+            f.led2 = juce::Rectangle<float>(13.0f, 13.0f).withCentre({ x0 + W * 0.3681f, y0 + H * 0.7008f });
+            f.switchLabel1 = f.switchLabel2 = {};                          // EQ / BOOST printed in the art
+            const float Wu = 226.0f * W / bodyWidthFor(2);
+            f.hasToggle = withToggle;
+            f.toggle      = juce::Rectangle<float>(Wu * 0.10f, Wu * 0.16f).withCentre({ x0 + W * 0.5000f, y0 + H * 0.2045f });
+            f.toggleLabel = {};                                            // ORDER / B > EQ / EQ > B printed in the art
             return f;
         }
         if (numSwitches >= 2)

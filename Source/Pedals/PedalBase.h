@@ -6,13 +6,14 @@
 // Top-level groups in the "+ Add pedal" menu, in the order they appear there.
 // To add a category: add it to the enum, give it a name in categoryName() and list it in allCategories.
 // Categories with no pedals are left out of the menu.
-enum class PedalCategory { Tools, Overdrive, Fuzz, Distortion, Modulation };
+enum class PedalCategory { Tools, BoostEq, Overdrive, Fuzz, Distortion, Modulation };
 
 inline juce::String categoryName(PedalCategory c)
 {
     switch (c)
     {
         case PedalCategory::Tools:      return "Tools";
+        case PedalCategory::BoostEq:    return "Boost / EQ";
         case PedalCategory::Overdrive:  return "Overdrive";
         case PedalCategory::Fuzz:       return "Fuzz";
         case PedalCategory::Distortion: return "Distortion";
@@ -20,7 +21,7 @@ inline juce::String categoryName(PedalCategory c)
     }
     return "Other";
 }
-inline constexpr PedalCategory allCategories[] = { PedalCategory::Tools, PedalCategory::Overdrive, PedalCategory::Fuzz, PedalCategory::Distortion,
+inline constexpr PedalCategory allCategories[] = { PedalCategory::Tools, PedalCategory::BoostEq, PedalCategory::Overdrive, PedalCategory::Fuzz, PedalCategory::Distortion,
                                                     PedalCategory::Modulation };
 
 // Every pedal implements this interface. The board owns pedals in a vector
@@ -44,6 +45,9 @@ public:
     virtual void process(juce::AudioBuffer<float>&) = 0;
     virtual void reset() {}
 
+    // Board slots the pedal takes (1 = standard 226 x 372 px body; 2 = double-wide 464 x 372, e.g. Coral Tide).
+    virtual int widthUnits() const { return 1; }
+
     // Main footswitch ("<id>_bypass"). The board only calls process() while isActive() is true.
     virtual bool isActive() const { return primaryOn() || secondaryOn(); }
     bool primaryOn() const { return bypassParam == nullptr || bypassParam->load() < 0.5f; }
@@ -52,6 +56,8 @@ public:
     // Optional second footswitch (e.g. a boost). Empty id = the pedal has only one footswitch.
     // The parameter is a bool where true = ON. Pedals with one must check both states in process().
     virtual juce::String secondarySwitchId() const { return {}; }
+    // Name of the main footswitch in its tooltip on two-switch pedals (default "Drive"; single-switch pedals: "Bypass").
+    virtual juce::String primarySwitchLabel() const { return {}; }
     virtual juce::String secondarySwitchLabel() const { return {}; }
     bool secondaryOn() const { return secondaryParam != nullptr && secondaryParam->load() >= 0.5f; }
     std::atomic<float>* secondaryParam = nullptr;

@@ -1,5 +1,6 @@
 #include "PluginEditor.h"
 #include <algorithm>
+#include <limits>
 
 // ---------------- PedalStrip ----------------
 // Tooltip for a control: its name in capitals, then what it does (PedalBase::describe).
@@ -16,7 +17,8 @@ PedalStrip::PedalStrip(PedalboardProcessor& p, PedalBase& pd, BoardComponent& b)
     remove.onClick = [this] { board.removePedal(pedal); };
     auto& bypassButton = face ? static_cast<juce::Button&>(footswitch) : static_cast<juce::Button&>(bypass);
     addAndMakeVisible(bypassButton);
-    bypassButton.setTooltip(tipFor(pd, pd.getId() + "_bypass", pd.secondarySwitchId().isNotEmpty() ? "Drive" : "Bypass"));
+    bypassButton.setTooltip(tipFor(pd, pd.getId() + "_bypass", pd.secondarySwitchId().isEmpty() ? juce::String("Bypass")
+                                   : pd.primarySwitchLabel().isNotEmpty() ? pd.primarySwitchLabel() : juce::String("Drive")));
     bypassAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
         p.apvts, pd.getId() + "_bypass", bypassButton);
     for (auto& id : pd.knobIds)
@@ -190,15 +192,27 @@ void BoardComponent::rebuild()
     strips.clear();
     for (auto& id : ids)
         if (auto* pd = proc.findPedal(id)) addAndMakeVisible(strips.add(new PedalStrip(proc, *pd, *this)));
-    setSize(juce::jmax(slotW, gap + strips.size() * (slotW + gap)), boardH);
+    int w = gap;
+    for (int i = 0; i < strips.size(); ++i) w += stripWidth(i) + gap;
+    setSize(juce::jmax(slotW, w), boardH);
     layoutSlots(false);
+}
+int BoardComponent::stripWidth(int i) const
+{
+    return juce::isPositiveAndBelow(i, strips.size()) ? widthFor(juce::jmax(1, strips[i]->pedal.widthUnits())) : slotW;
+}
+int BoardComponent::slotX(int i) const
+{
+    int x = gap;
+    for (int k = 0; k < i && k < strips.size(); ++k) x += stripWidth(k) + gap;
+    return x;
 }
 void BoardComponent::layoutSlots(bool animate)
 {
     for (int i = 0; i < strips.size(); ++i)
     {
         if (strips[i]->dragging) continue;
-        juce::Rectangle<int> b(slotX(i), 4, slotW, getHeight() - 8);
+        juce::Rectangle<int> b(slotX(i), 4, stripWidth(i), getHeight() - 8);
         if (animate) animator.animateComponent(strips[i], b, 1.0f, 150, false, 1.0, 1.0);
         else strips[i]->setBounds(b);
     }
@@ -215,9 +229,20 @@ void BoardComponent::beginDrag(PedalStrip& s)
 void BoardComponent::dragTo(PedalStrip& s)
 {
     int mx = getLocalPoint(nullptr, juce::Desktop::getMousePosition()).x;
-    int x = juce::jlimit(0, juce::jmax(0, getWidth() - slotW), mx - grabOffset);
+    const int sw = stripWidth(dragIndex);
+    int x = juce::jlimit(0, juce::jmax(0, getWidth() - sw), mx - grabOffset);
     s.setTopLeftPosition(x, s.getY());
-    int target = juce::jlimit(0, strips.size() - 1, (x + slotW / 2) / (slotW + gap));
+    // Target slot = the position (among the other strips) whose left edge is nearest the dragged strip's left edge.
+    // Works for mixed single / double-wide pedals.
+    int target = dragIndex, best = std::numeric_limits<int>::max(), left = gap, t = 0;
+    for (int k = 0; k <= strips.size(); ++k)
+    {
+        if (k == dragIndex) continue;
+        if (const int dist = std::abs(x - left); dist < best) { best = dist; target = t; }
+        if (k < strips.size()) left += stripWidth(k) + gap;
+        ++t;
+    }
+    target = juce::jlimit(0, strips.size() - 1, target);
     if (target != dragIndex)
     {
         strips.move(dragIndex, target);
@@ -245,7 +270,7 @@ void BoardComponent::endDrag(PedalStrip& s)
 {
     stopTimer();
     dragged = nullptr;
-    animator.animateComponent(&s, { slotX(dragIndex), 4, slotW, getHeight() - 8 }, 1.0f, 120, false, 1.0, 1.0);
+    animator.animateComponent(&s, { slotX(dragIndex), 4, stripWidth(dragIndex), getHeight() - 8 }, 1.0f, 120, false, 1.0, 1.0);
     juce::StringArray ids;
     for (auto* p : strips) ids.add(p->pedal.getId());
     proc.setBoard(ids);             // commit new order to the audio chain + saved state

@@ -61,15 +61,17 @@ public:
     static constexpr float knobPad = 1.30f, switchPad = 1.35f, ledPad = 2.6f;
     static constexpr int knobGridColumns = 8;                                     // = pedal_render_common.GRID_COLS
 
-    explicit RenderedFace(const juce::String& prefix)
+    explicit RenderedFace(const juce::String& prefix, int widthUnits = 1)
     {
         face      = loadImage(prefix + "_face_png");
-        if (face.isValid() && std::abs((float) face.getHeight() / (float) face.getWidth() - FaceLayout::bodyAspect) > 0.02f)
+        if (face.isValid() && std::abs((float) face.getHeight() / (float) face.getWidth() - FaceLayout::aspectFor(widthUnits)) > 0.02f)
             face = {};                     // rendered for an older body shape: use the vector face until re-rendered
         switchUp  = loadImage(prefix + "_switch_up_png");
         switchDn  = loadImage(prefix + "_switch_down_png");
         ledOn     = loadImage(prefix + "_led_on_png");
         ledOff    = loadImage(prefix + "_led_off_png");
+        led2On    = loadImage(prefix + "_led2_on_png");                 // optional: a second LED colour
+        led2Off   = loadImage(prefix + "_led2_off_png");
         auto strip = loadImage(prefix + "_knob_strip_png");
         if (strip.isValid())
             knobLook = std::make_unique<FilmstripKnobLookAndFeel>(strip, knobGridColumns);
@@ -102,19 +104,19 @@ public:
 protected:
     virtual void paintVector(juce::Graphics&, const FaceLayout&, bool active) = 0;
 
-    static void drawLed(juce::Graphics& g, juce::Rectangle<float> l, bool active)
+    static void drawLed(juce::Graphics& g, juce::Rectangle<float> l, bool active, bool blue = false)
     {
         using namespace juce;
         g.setColour(Colour(0xff6f7378)); g.fillEllipse(l.expanded(2.5f));
         g.setColour(Colour(0xff2a2c2f)); g.fillEllipse(l.expanded(1.0f));
         if (active)
         {
-            g.setColour(Colour(0xffff2a1a).withAlpha(0.25f)); g.fillEllipse(l.expanded(6.0f));
-            g.setGradientFill(ColourGradient(Colour(0xffffd0c0), l.getCentreX() - 1, l.getCentreY() - 2,
-                                             Colour(0xffe01a0e), l.getRight(), l.getBottom(), true));
+            g.setColour((blue ? Colour(0xff2a6cff) : Colour(0xffff2a1a)).withAlpha(0.25f)); g.fillEllipse(l.expanded(6.0f));
+            g.setGradientFill(ColourGradient(blue ? Colour(0xffd0e4ff) : Colour(0xffffd0c0), l.getCentreX() - 1, l.getCentreY() - 2,
+                                             blue ? Colour(0xff1440e0) : Colour(0xffe01a0e), l.getRight(), l.getBottom(), true));
         }
         else
-            g.setColour(Colour(0xff4a0d0a));
+            g.setColour(blue ? Colour(0xff0c1a4a) : Colour(0xff4a0d0a));
         g.fillEllipse(l);
     }
 
@@ -127,7 +129,7 @@ protected:
     }
 
 private:
-    juce::Image face, switchUp, switchDn, ledOn, ledOff;
+    juce::Image face, switchUp, switchDn, ledOn, ledOff, led2On, led2Off;
     std::unique_ptr<FilmstripKnobLookAndFeel> knobLook;
 
     void paintRendered(juce::Graphics& g, const FaceLayout& f, bool active)
@@ -147,7 +149,8 @@ private:
         if (f.twoSwitches)
         {
             const auto led2 = f.led2.withSizeKeepingCentre(f.led2.getWidth() * ledPad, f.led2.getHeight() * ledPad);
-            if (auto& img = f.secondaryOn ? ledOn : ledOff; img.isValid())
+            const bool own = led2On.isValid() && led2Off.isValid();
+            if (auto& img = f.secondaryOn ? (own ? led2On : ledOn) : (own ? led2Off : ledOff); img.isValid())
                 g.drawImage(img, led2);
         }
     }
@@ -1008,6 +1011,59 @@ private:
     std::array<juce::Image, 3> toggle;
 };
 
+// ---------------------------------------------------------------------------
+// Coral Tide (Bearfoot / BJFE Sea Blue EQ + Baby Pink Booster, double-wide 464 x 372): Michael's full-face artwork
+// (Assets/coraltide_art.png from Tools/Art/make_coraltide_art.py: coral reef, sea and sunset, "Coral Tide", BOOST /
+// LEVEL / ORDER / LOW / HIGH, "TONE FLOWS FURTHER", BOOST / EQ under the switches) on a cream enclosure. Knobs, toggle,
+// switches and LEDs sit on the painted ones (FaceLayout: pedalId "ct"). Main (EQ) LED blue = <prefix>_led_*,
+// BOOST LED red = <prefix>_led2_* (render_coraltide.py).
+class CoralTideFace : public RenderedFace
+{
+public:
+    static constexpr float togglePad = 1.30f;    // = render_coraltide.py
+
+    CoralTideFace() : RenderedFace("coraltide", 2)
+    {
+        art = juce::ImageCache::getFromMemory(BinaryData::coraltide_art_png, BinaryData::coraltide_art_pngSize);
+        toggleUp = loadImage("coraltide_toggle_up_png");
+        toggleDn = loadImage("coraltide_toggle_down_png");
+    }
+    bool drawsLabels() const override { return true; }                 // all lettering is in the artwork
+    juce::Colour labelColour() const override { return juce::Colour(0xff1d4e6b); }
+    juce::Rectangle<float> toggleBounds(juce::Rectangle<float> r) const override
+    {
+        return rendered() && toggleUp.isValid() ? r.withSizeKeepingCentre(r.getWidth() * togglePad, r.getHeight() * togglePad) : r;
+    }
+    const juce::Image* toggleImage(bool up) const override
+    {
+        if (! rendered()) return nullptr;
+        auto& img = up ? toggleUp : toggleDn;
+        return img.isValid() ? &img : nullptr;
+    }
+
+protected:
+    void paintVector(juce::Graphics& g, const FaceLayout& f, bool active) override
+    {
+        using namespace juce;
+        const auto b = f.body;
+        g.setColour(Colours::black.withAlpha(0.45f));
+        g.fillRoundedRectangle(b.translated(0, 3), 9.0f);
+        g.setGradientFill(ColourGradient(Colour(0xfff1e7d6), b.getX(), b.getY(), Colour(0xffd9ccb6), b.getRight(), b.getBottom(), false));
+        g.fillRoundedRectangle(b, 9.0f);
+        if (art.isValid())
+        {
+            g.setImageResamplingQuality(Graphics::highResamplingQuality);
+            g.setOpacity(1.0f);
+            g.drawImage(art, f.emblem);
+        }
+        drawLed(g, f.led, active, true);                               // EQ: blue
+        drawLed(g, f.led2, f.secondaryOn);                             // BOOST: red
+    }
+
+private:
+    juce::Image art, toggleUp, toggleDn;
+};
+
 std::unique_ptr<PedalFace> createFaceFor(const juce::String& pedalId)
 {
     if (pedalId == "bm") return std::make_unique<RamhornFace>();
@@ -1020,5 +1076,6 @@ std::unique_ptr<PedalFace> createFaceFor(const juce::String& pedalId)
     if (pedalId == "th") return std::make_unique<ThunderheadFace>();
     if (pedalId == "gh") return std::make_unique<GoldenHazeFace>();
     if (pedalId == "nc") return std::make_unique<NightCourierFace>();
+    if (pedalId == "ct") return std::make_unique<CoralTideFace>();
     return nullptr;
 }

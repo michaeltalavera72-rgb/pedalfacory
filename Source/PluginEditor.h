@@ -60,7 +60,10 @@ public:
     void setViewport(juce::Viewport* v) { viewport = v; }
     void endDrag(PedalStrip&);
     void removePedal(PedalBase&);
-    int slotX(int i) const { return gap + i * (slotW + gap); }
+    // Slot geometry: a pedal takes PedalBase::widthUnits() slots (double-wide pedals span two slots + the gap).
+    static int widthFor(int units) { return units * slotW + (units - 1) * gap; }
+    int stripWidth(int i) const;
+    int slotX(int i) const;                         // left edge of strip i in the current order
     PedalboardProcessor& proc;
 private:
     void timerCallback() override;
