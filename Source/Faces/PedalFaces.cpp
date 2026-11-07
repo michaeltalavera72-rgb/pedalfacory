@@ -954,6 +954,60 @@ private:
     juce::Image art;
 };
 
+// ---------------------------------------------------------------------------
+// Night Courier (based on the EarthQuaker Devices Dispatch Master): Michael's full-face artwork
+// (Assets/nightcourier_art.png: the hooded courier with his satchel above the moonlit river city, every control
+// label, "NIGHT COURIER", "DELAY / REVERB", "SOUND TRAVELS FURTHER AT NIGHT") on a matte black enclosure. Six
+// knobs, the 3-way DELAY / REVERB / BOTH toggle, the BYPASS footswitch and LED sit on the painted ones
+// (FaceLayout: pedalId "nc").
+class NightCourierFace : public RenderedFace
+{
+public:
+    static constexpr float togglePad = 1.30f;    // = render_nightcourier.py
+
+    NightCourierFace() : RenderedFace("nightcourier")
+    {
+        art = juce::ImageCache::getFromMemory(BinaryData::nightcourier_art_png, BinaryData::nightcourier_art_pngSize);
+        toggle[0] = loadImage("nightcourier_toggle_up_png");
+        toggle[1] = loadImage("nightcourier_toggle_centre_png");
+        toggle[2] = loadImage("nightcourier_toggle_down_png");
+    }
+    bool drawsLabels() const override { return true; }
+    juce::Colour labelColour() const override { return juce::Colour(0xffe8e2d4); }
+    juce::Rectangle<float> toggleBounds(juce::Rectangle<float> r) const override
+    {
+        return rendered() && toggle[0].isValid() ? r.withSizeKeepingCentre(r.getWidth() * togglePad, r.getHeight() * togglePad) : r;
+    }
+    const juce::Image* toggleImage3(int pos) const override
+    {
+        if (! rendered()) return nullptr;
+        auto& img = toggle[(size_t) juce::jlimit(0, 2, pos)];
+        return img.isValid() ? &img : nullptr;
+    }
+
+protected:
+    void paintVector(juce::Graphics& g, const FaceLayout& f, bool active) override
+    {
+        using namespace juce;
+        const auto b = f.body;
+        g.setColour(Colours::black.withAlpha(0.45f));
+        g.fillRoundedRectangle(b.translated(0, 3), 9.0f);
+        g.setGradientFill(ColourGradient(Colour(0xff26282b), b.getX(), b.getY(), Colour(0xff0c0c0d), b.getRight(), b.getBottom(), false));
+        g.fillRoundedRectangle(b, 9.0f);
+        if (art.isValid())
+        {
+            g.setImageResamplingQuality(Graphics::highResamplingQuality);
+            g.setOpacity(1.0f);
+            g.drawImage(art, f.emblem);
+        }
+        drawLed(g, f.led, active);
+    }
+
+private:
+    juce::Image art;
+    std::array<juce::Image, 3> toggle;
+};
+
 std::unique_ptr<PedalFace> createFaceFor(const juce::String& pedalId)
 {
     if (pedalId == "bm") return std::make_unique<RamhornFace>();
@@ -965,5 +1019,6 @@ std::unique_ptr<PedalFace> createFaceFor(const juce::String& pedalId)
     if (pedalId == "ng") return std::make_unique<GatekeeperFace>();
     if (pedalId == "th") return std::make_unique<ThunderheadFace>();
     if (pedalId == "gh") return std::make_unique<GoldenHazeFace>();
+    if (pedalId == "nc") return std::make_unique<NightCourierFace>();
     return nullptr;
 }

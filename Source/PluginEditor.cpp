@@ -52,7 +52,17 @@ PedalStrip::PedalStrip(PedalboardProcessor& p, PedalBase& pd, BoardComponent& b)
                 p.apvts, pd.secondarySwitchId(), footswitch2);
             footswitch2.setTooltip(tipFor(pd, pd.secondarySwitchId(), pd.secondarySwitchLabel()));
         }
-        if (pd.toggleId.isNotEmpty())
+        if (pd.toggleId.isNotEmpty() && pd.togglePositions == 3)
+        {
+            auto* param = p.apvts.getParameter(pd.toggleId);
+            toggle3.imageFor = [this](int pos) { return face->toggleImage3(pos); };
+            toggle3Att = std::make_unique<juce::ParameterAttachment>(*param, [this](float v) { toggle3.setPosition(juce::roundToInt(v)); });
+            toggle3.onChange = [this](int pos) { toggle3Att->setValueAsCompleteGesture((float) pos); };
+            toggle3Att->sendInitialUpdate();
+            addAndMakeVisible(toggle3);
+            toggle3.setTooltip(tipFor(pd, pd.toggleId, pd.toggleLabel));
+        }
+        else if (pd.toggleId.isNotEmpty())
         {
             toggle.imageFor = [this](bool up) { return face->toggleImage(up); };
             addAndMakeVisible(toggle);
@@ -78,7 +88,7 @@ void PedalStrip::timerCallback()
 }
 FaceLayout PedalStrip::layout() const
 {
-    auto f = FaceLayout::make(bodyBounds(), knobs.size(), numSwitches(), pedal.toggleId.isNotEmpty());
+    auto f = FaceLayout::make(bodyBounds(), knobs.size(), numSwitches(), pedal.toggleId.isNotEmpty(), pedal.getId());
     f.secondaryOn = pedal.secondaryOn();
     return f;
 }
@@ -120,7 +130,8 @@ void PedalStrip::resized()
         }
         footswitch.setBounds(face->switchBounds(f.footswitch).toNearestInt());
         if (f.twoSwitches) footswitch2.setBounds(face->switchBounds(f.footswitch2).toNearestInt());
-        if (f.hasToggle) toggle.setBounds(face->toggleBounds(f.toggle).toNearestInt());
+        if (f.hasToggle) (pedal.togglePositions == 3 ? static_cast<juce::Component&>(toggle3) : toggle)
+                             .setBounds(face->toggleBounds(f.toggle).toNearestInt());
         return;
     }
     auto r = bodyBounds().toNearestInt().reduced(8);

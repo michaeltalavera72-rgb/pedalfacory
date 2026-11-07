@@ -25,7 +25,9 @@ struct FaceLayout
     juce::Rectangle<float> toggle, toggleLabel;
     juce::Rectangle<float> window;           // optional second artwork area (Slow Burn: the valve window)
 
-    static FaceLayout make(juce::Rectangle<float> body, int numKnobs, int numSwitches = 1, bool withToggle = false)
+    // pedalId: for layouts fitted to one pedal's artwork that the knob/switch counts alone can't tell apart.
+    static FaceLayout make(juce::Rectangle<float> body, int numKnobs, int numSwitches = 1, bool withToggle = false,
+                           const juce::String& pedalId = {})
     {
         FaceLayout f; f.body = body;
         const float W = body.getWidth(), H = body.getHeight(), x0 = body.getX(), y0 = body.getY();
@@ -147,6 +149,35 @@ struct FaceLayout
             f.subtitle = {};
             f.led      = juce::Rectangle<float>(11.0f, 11.0f).withCentre({ x0 + W * 0.6963f, y0 + H * 0.8413f });
             f.footswitch = juce::Rectangle<float>(sw, sw).withCentre({ x0 + W * 0.4979f, y0 + H * 0.8385f });
+        }
+        if (pedalId == "nc")
+        {
+            // Night Courier: Michael's full-face artwork (Assets/nightcourier_art.png), printed artInset inside the
+            // edge. TIME / REPEATS / MIX / REVERB on the top row, MOD / TONE below, the DELAY / REVERB / BOTH 3-way
+            // toggle between them, BYPASS footswitch + LED bottom-left - all on the controls painted in the art
+            // (fractions from Tools/Art/make_nightcourier_art.py = render_nightcourier.py). The art's second
+            // (PRESET) footswitch was painted out.
+            f.knobs.clear(); f.labels.clear();
+            const float d1 = W * 0.1537f, d2 = W * 0.1353f;
+            const float pos[6][2] = { { 0.1546f, 0.1837f }, { 0.3801f, 0.1825f }, { 0.6209f, 0.1825f }, { 0.8515f, 0.1825f },
+                                      { 0.2366f, 0.3456f }, { 0.7644f, 0.3456f } };
+            for (int i = 0; i < 6; ++i)
+            {
+                const float d = i < 4 ? d1 : d2;
+                const auto k = juce::Rectangle<float>(d, d).withCentre({ x0 + W * pos[i][0], y0 + H * pos[i][1] });
+                f.knobs.add(k);
+                f.labels.add({ k.getX(), k.getBottom(), d, 13.0f });      // printed in the art; unused
+            }
+            f.emblem   = body.reduced(W * artInset);
+            f.name     = f.emblem;
+            f.subtitle = {};
+            f.led      = juce::Rectangle<float>(11.0f, 11.0f).withCentre({ x0 + W * 0.1618f, y0 + H * 0.7553f });
+            const float swn = W * 0.165f;                                   // smaller than standard: BYPASS is printed just below
+            f.footswitch = juce::Rectangle<float>(swn, swn).withCentre({ x0 + W * 0.1598f, y0 + H * 0.8332f });
+            f.hasToggle = withToggle;
+            f.toggle      = juce::Rectangle<float>(W * 0.10f, W * 0.16f).withCentre({ x0 + W * 0.5010f, y0 + H * 0.3817f });
+            f.toggleLabel = {};
+            return f;
         }
         if (numSwitches >= 2)
         {

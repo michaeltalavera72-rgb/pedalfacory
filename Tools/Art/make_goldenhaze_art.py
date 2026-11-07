@@ -25,7 +25,7 @@ TAG_Y, TAG_CAP, TAG_RGB, RULE_RGB = 1380, 15, (192, 144, 60), (212, 162, 76)
 TAG_WORDS = ("POWER AMP", "DISTORTION", "HIGHER GROUND")
 
 
-def exemplar_inpaint(img, hole, patch=11, search=170, seed=5, dweight=0.0):
+def exemplar_inpaint(img, hole, patch=11, search=170, seed=5, dweight=0.0, allowed=None):
     """Exemplar (Criminisi-style) inpainting: fill the hole patch by patch from its edge inwards, each time copying the
     best-matching fully known patch from nearby (cv2.matchTemplate). dweight > 0 fills strong incoming structure
     first (Criminisi's data term); 0 = plain onion-peel order, which gave the cleanest result on this art (fewer
@@ -40,6 +40,9 @@ def exemplar_inpaint(img, hole, patch=11, search=170, seed=5, dweight=0.0):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY).astype(np.float32)
     src_ok = cv2.erode(known.astype(np.uint8), np.ones((patch, patch), np.uint8),
                        borderType=cv2.BORDER_CONSTANT, borderValue=0).astype(bool)
+    if allowed is not None:                       # optional: only copy patches lying fully inside "allowed"
+        src_ok &= cv2.erode(allowed.astype(np.uint8), np.ones((patch, patch), np.uint8),
+                            borderType=cv2.BORDER_CONSTANT, borderValue=0).astype(bool)
     src_ok[:h + 1] = src_ok[-h - 1:] = False
     src_ok[:, :h + 1] = src_ok[:, -h - 1:] = False
     k3 = np.ones((3, 3), np.uint8)

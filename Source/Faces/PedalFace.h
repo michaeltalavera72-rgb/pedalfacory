@@ -18,6 +18,7 @@ public:
     virtual const juce::Image* footswitchImage(bool /*down*/) const { return nullptr; }
     virtual juce::Rectangle<float> toggleBounds(juce::Rectangle<float> r) const { return r; }
     virtual const juce::Image* toggleImage(bool /*up*/) const { return nullptr; }
+    virtual const juce::Image* toggleImage3(int /*pos: 0 up, 1 centre, 2 down*/) const { return nullptr; }
 };
 
 // Returns the face for a pedal id, or nullptr. Register new faces in PedalFaces.cpp.

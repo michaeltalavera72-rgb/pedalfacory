@@ -6,7 +6,7 @@
 // Top-level groups in the "+ Add pedal" menu, in the order they appear there.
 // To add a category: add it to the enum, give it a name in categoryName() and list it in allCategories.
 // Categories with no pedals are left out of the menu.
-enum class PedalCategory { Tools, Overdrive, Fuzz, Distortion };
+enum class PedalCategory { Tools, Overdrive, Fuzz, Distortion, Modulation };
 
 inline juce::String categoryName(PedalCategory c)
 {
@@ -16,10 +16,12 @@ inline juce::String categoryName(PedalCategory c)
         case PedalCategory::Overdrive:  return "Overdrive";
         case PedalCategory::Fuzz:       return "Fuzz";
         case PedalCategory::Distortion: return "Distortion";
+        case PedalCategory::Modulation: return "Modulation";
     }
     return "Other";
 }
-inline constexpr PedalCategory allCategories[] = { PedalCategory::Tools, PedalCategory::Overdrive, PedalCategory::Fuzz, PedalCategory::Distortion };
+inline constexpr PedalCategory allCategories[] = { PedalCategory::Tools, PedalCategory::Overdrive, PedalCategory::Fuzz, PedalCategory::Distortion,
+                                                    PedalCategory::Modulation };
 
 // Every pedal implements this interface. The board owns pedals in a vector
 // and runs them in order (guitar -> pedal 1 -> pedal 2 -> ... -> output).
@@ -59,6 +61,7 @@ public:
     // Optional mini toggle switch on the face (e.g. a voicing switch). Bool parameter, true = up/ON.
     // Not a footswitch: it never bypasses the pedal.
     juce::String toggleId, toggleLabel;     // toggleLabel = the toggle's name in its tooltip (e.g. "HARD / SOFT")
+    int togglePositions = 2;                // 2 = bool parameter (true = up); 3 = 3-way: choice parameter 0 = up, 1 = centre, 2 = down
 
     // Optional "effects loop" return stage (e.g. a keyed noise gate). When hasReturnStage() is true the board
     // calls process() at the pedal's slot, then processReturn() on the same block after the later pedals:

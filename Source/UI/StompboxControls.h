@@ -203,3 +203,67 @@ public:
         if (over) { g.setColour(Colours::white.withAlpha(0.12f)); g.fillEllipse(r.reduced(1.0f)); }
     }
 };
+
+// Three-position mini toggle (lever up / centre / down), e.g. Night Courier's DELAY / REVERB / BOTH.
+// Click the upper half to move the lever up one position, the lower half to move it down; the mouse wheel works too.
+// Position 0 = up, 1 = centre, 2 = down (= PedalBase::togglePositions == 3 choice parameter).
+class ThreeWayToggle : public juce::Component, public juce::SettableTooltipClient
+{
+public:
+    std::function<void(int)> onChange;                          // user moved the lever
+    std::function<const juce::Image*(int pos)> imageFor;        // optional rendered images per position
+    int getPosition() const { return pos; }
+    void setPosition(int p) { p = juce::jlimit(0, 2, p); if (p != pos) { pos = p; repaint(); } }
+
+    void mouseDown(const juce::MouseEvent& e) override { move(e.position.y < (float) getHeight() * 0.5f ? -1 : 1); }
+    void mouseWheelMove(const juce::MouseEvent&, const juce::MouseWheelDetails& w) override { if (w.deltaY != 0.0f) move(w.deltaY > 0 ? -1 : 1); }
+
+    void paint(juce::Graphics& g) override
+    {
+        using namespace juce;
+        if (imageFor)
+            if (auto* img = imageFor(pos); img != nullptr && img->isValid())
+            {
+                g.setImageResamplingQuality(Graphics::highResamplingQuality);
+                g.setOpacity(1.0f);
+                g.drawImage(*img, getLocalBounds().toFloat());
+                return;
+            }
+        auto r = getLocalBounds().toFloat();
+        const float R = jmin(r.getWidth(), r.getHeight() * 0.62f) * 0.5f;
+        const auto c = r.getCentre();
+        Path hex;
+        for (int i = 0; i < 6; ++i)
+        {
+            const float a = MathConstants<float>::twoPi * (float) i / 6.0f;
+            const Point<float> pt { c.x + std::cos(a) * R, c.y + std::sin(a) * R };
+            if (i == 0) hex.startNewSubPath(pt); else hex.lineTo(pt);
+        }
+        hex.closeSubPath();
+        g.setColour(Colours::black.withAlpha(0.35f)); g.fillPath(hex, AffineTransform::translation(1.0f, 2.0f));
+        g.setGradientFill(ColourGradient(Colour(0xffe6e8ea), c.x - R, c.y - R, Colour(0xff7d8186), c.x + R, c.y + R, false));
+        g.fillPath(hex);
+        const float rb = R * 0.55f;
+        g.setGradientFill(ColourGradient(Colour(0xfff4f5f6), c.x - rb, c.y - rb, Colour(0xff6b6f74), c.x + rb, c.y + rb, false));
+        g.fillEllipse(c.x - rb, c.y - rb, rb * 2, rb * 2);
+        // lever: up / centre (pointing at the viewer: short) / down
+        const float len = pos == 1 ? r.getHeight() * 0.10f : r.getHeight() * 0.46f, dir = pos == 2 ? 1.0f : -1.0f;
+        const Point<float> tip { c.x, c.y + dir * len };
+        g.setGradientFill(ColourGradient(Colour(0xffffffff), c.x - rb, c.y, Colour(0xff8d9196), c.x + rb, c.y, false));
+        Path lever;
+        lever.startNewSubPath(c.x - rb * 0.45f, c.y); lever.lineTo(tip.x - rb * 0.62f, tip.y);
+        lever.lineTo(tip.x + rb * 0.62f, tip.y); lever.lineTo(c.x + rb * 0.45f, c.y); lever.closeSubPath();
+        g.fillPath(lever);
+        g.fillEllipse(tip.x - rb * 0.68f, tip.y - rb * 0.68f, rb * 1.36f, rb * 1.36f);
+    }
+
+private:
+    int pos = 2;
+    void move(int d)
+    {
+        const int p = juce::jlimit(0, 2, pos + d);
+        if (p == pos) return;
+        pos = p; repaint();
+        if (onChange) onChange(pos);
+    }
+};

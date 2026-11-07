@@ -33,8 +33,10 @@ private:
     juce::TextButton remove { "X" };
     juce::ToggleButton bypass { "Bypass" };
     Footswitch footswitch, footswitch2;          // footswitch2 only for pedals with a second switch
-    MiniToggle toggle;                           // only for pedals with PedalBase::toggleId
+    MiniToggle toggle;                           // only for pedals with PedalBase::toggleId (2 positions)
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> toggleAtt;
+    ThreeWayToggle toggle3;                      // ... or a 3-way toggle (togglePositions == 3)
+    std::unique_ptr<juce::ParameterAttachment> toggle3Att;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> bypassAtt;
     juce::OwnedArray<juce::Slider> knobs;
     juce::OwnedArray<juce::Label> labels;
